@@ -1,6 +1,8 @@
 ﻿{
   "dependencies": {
-    "Microsoft.NETCore.UniversalWindowsPlatform": "5.0.0"
+    "Microsoft.NETCore.UniversalWindowsPlatform": "5.0.0",
+    "microsoft.projectoxford.emotion": "1.0.310",
+    "microsoft.projectoxford.face": "1.1.0"
   },
   "frameworks": {
     "uap10.0": {}

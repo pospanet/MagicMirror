@@ -5,6 +5,13 @@ VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MirrorUI", "MirrorUI\MirrorUI.csproj", "{1275A263-CCB3-4A7C-B12B-C4787670EDF1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assets", "Assets", "{1973291C-E447-417C-A16D-38FB47F5FF5B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Visual", "Visual", "{DC824137-BE0E-47D3-A734-87F78BD447FB}"
+	ProjectSection(SolutionItems) = preProject
+		Assets\Visual\magic-frame.jpg = Assets\Visual\magic-frame.jpg
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -36,5 +43,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DC824137-BE0E-47D3-A734-87F78BD447FB} = {1973291C-E447-417C-A16D-38FB47F5FF5B}
 	EndGlobalSection
 EndGlobal
