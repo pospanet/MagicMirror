@@ -37,7 +37,9 @@ namespace Pospa.NET.MagicMirror.UI
             {
                 InMemoryRandomAccessStream photoStream = new InMemoryRandomAccessStream();
                 await mediaCapture.CapturePhotoToStreamAsync(ImageEncodingProperties.CreateJpeg(), photoStream);
-                Face[] faces = await client.DetectAsync(photoStream.AsStreamForRead());
+                photoStream.AsStreamForRead().Seek(0, SeekOrigin.Begin);
+                Face[] faces = await client.DetectAsync(photoStream.AsStreamForRead(), true, true);
+
                 IdentifyResult[] identifyResults =
                     await client.IdentifyAsync(PersonGroupId, faces.Select(face => face.FaceId).ToArray());
                 Guid[] persons =
