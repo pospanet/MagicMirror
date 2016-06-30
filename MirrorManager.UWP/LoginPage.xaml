@@ -1,0 +1,26 @@
+﻿<Page
+    x:Class="MirrorManager.UWP.LoginPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MirrorManager.UWP"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ProgressBar x:Name="progress" Visibility="Collapsed" />
+
+        <TextBlock Style="{StaticResource HeaderTextBlockStyle}">MagicMirrorManager Login</TextBlock>
+        
+        <!-- TODO: image na pozadí -->
+        <StackPanel Grid.Row="1">
+            <Button Content="Login with Office 365" Click="Login_Click" />
+            <TextBlock x:Name="txtStatus" />
+        </StackPanel>
+    </Grid>
+</Page>
