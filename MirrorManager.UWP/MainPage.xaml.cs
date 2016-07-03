@@ -1,4 +1,5 @@
 ﻿using MirrorManager.UWP.DAO;
+using MirrorManager.UWP.Helpers;
 using MirrorManager.UWP.ViewModels;
 using Newtonsoft.Json;
 using System;
@@ -24,6 +25,7 @@ using Windows.System.Display;
 using Windows.System.Threading;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -35,6 +37,8 @@ namespace MirrorManager.UWP
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        private MainPageViewModel viewModel;
+
         private MediaCapture mediaCapture;
         private bool isInitialized;
         private bool isPreviewing;
@@ -156,12 +160,23 @@ namespace MirrorManager.UWP
                 Debug.WriteLine("Photo taken!");
 
                 var photoOrientation = ConvertOrientationToPhotoOrientation(GetCameraOrientation());
-                await ReencodeAndSavePhotoAsync(stream, "photo.jpg", photoOrientation);
+
+                var image = new BitmapImage();
+                stream.Seek(0);
+                await image.SetSourceAsync(stream);
+                photo.Source = image;
+
+                await FaceApiHelper.AddPersonFaceAsync("", "", stream);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Exception when taking a photo: {0}", ex.ToString());
             }
+            finally
+            {
+                stream.Dispose();
+            }
+
         }
 
         private async Task InitializeCameraAsync()
@@ -336,44 +351,6 @@ namespace MirrorManager.UWP
             }
         }
 
-        private async Task TakePhotoAsync()
-        {
-            var stream = new InMemoryRandomAccessStream();
-
-            try
-            {
-                Debug.WriteLine("Taking photo...");
-                await mediaCapture.CapturePhotoToStreamAsync(ImageEncodingProperties.CreateJpeg(), stream);
-                Debug.Write("Done");
-
-                var photoOrientation = ConvertOrientationToPhotoOrientation(GetCameraOrientation());
-                await ReencodeAndSavePhotoAsync(stream, "photo.jpg", photoOrientation);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Exception when taking a photo: " + ex.Message);
-            }
-        }
-
-        private static async Task ReencodeAndSavePhotoAsync(InMemoryRandomAccessStream stream, string fileName, PhotoOrientation photoOrientation)
-        {
-            using (var inputStream = stream)
-            {
-                var decoder = await BitmapDecoder.CreateAsync(inputStream);
-
-                var file = await KnownFolders.PicturesLibrary.CreateFileAsync(fileName, CreationCollisionOption.GenerateUniqueName);
-
-                using (var outputStream = await file.OpenAsync(FileAccessMode.ReadWrite))
-                {
-                    var properties = new BitmapPropertySet { { "System.Photo.Orientation", new BitmapTypedValue(photoOrientation, PropertyType.UInt16) } };
-
-                    var encoder = await BitmapEncoder.CreateForTranscodingAsync(outputStream, decoder);
-                    await encoder.BitmapProperties.SetPropertiesAsync(properties);
-                    await encoder.FlushAsync();
-                }
-            }
-        }
-
         private PhotoOrientation ConvertOrientationToPhotoOrientation(SimpleOrientation orientation)
         {
             switch (orientation)
@@ -440,18 +417,16 @@ namespace MirrorManager.UWP
                     {
                         faces = await this.faceTracker.ProcessNextFrameAsync(previewFrame);
                         Debug.WriteLine("Got faces: " + faces.Count.ToString());
+
+                        var nothing = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {
+                            (DataContext as MainPageViewModel).OneFacePresent = (faces.Count == 1);
+                        });
+                        
                     }
                     else
                     {
                         throw new System.NotSupportedException("PixelFormat '" + InputPixelFormat.ToString() + "' is not supported by FaceDetector");
                     }
-
-                    // Create our visualization using the frame dimensions and face results but run it on the UI thread.
-                    //var previewFrameSize = new Windows.Foundation.Size(previewFrame.SoftwareBitmap.PixelWidth, previewFrame.SoftwareBitmap.PixelHeight);
-                    //var ignored = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    //{
-                    //    this.SetupVisualization(previewFrameSize, faces);
-                    //});
                 }
             }
             catch (Exception ex)

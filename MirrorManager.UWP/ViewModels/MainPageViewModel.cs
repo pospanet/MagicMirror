@@ -16,9 +16,18 @@ namespace MirrorManager.UWP.ViewModels
         public string UserName
         {
             get { return userName; }
-            set { Set(ref userName, value); }
+            set { Set(ref userName, value); RaisePropertyChanged("Greeting"); }
         }
 
+        public string Greeting => $"Hello, {UserName}";
+
+        private bool oneFacePresent;
+
+        public bool OneFacePresent
+        {
+            get { return oneFacePresent; }
+            set { Set(ref oneFacePresent, value); }
+        }
 
         #region INotifyPropertyChanged
 
