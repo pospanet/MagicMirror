@@ -9,9 +9,24 @@
     DataContext="{Binding Source={StaticResource ViewModelLocator}, Path=MainPage}">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <StackPanel Padding="24">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        
+        <StackPanel Padding="24" Grid.Column="0">
             <TextBlock Text="Hello," Style="{StaticResource TitleTextBlockStyle}" />
             <TextBlock Text="{Binding UserName}" />
         </StackPanel>
+
+        <Grid Grid.Column="1">
+            <Border BorderBrush="Gray" BorderThickness="2" Width="300" Height="400">
+                <StackPanel>
+                    <CaptureElement x:Name="photoPreview" Stretch="Uniform" />
+                    <MediaElement x:Name="photoFrame" />
+                    <Button Content="Take a picture" Click="TakePicture_Click" />
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Page>
