@@ -16,6 +16,7 @@ using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.Capture;
+using Windows.Media.Core;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
 using Windows.Storage;
@@ -23,6 +24,7 @@ using Windows.Storage.FileProperties;
 using Windows.Storage.Streams;
 using Windows.System.Display;
 using Windows.System.Threading;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media.Imaging;
@@ -56,10 +58,7 @@ namespace MirrorManager.UWP
 
         private static readonly Guid RotationKey = new Guid("C380465D-2271-428C-9B83-ECEA3B4A85C1");
 
-        private VideoEncodingProperties videoProperties;
-        private FaceTracker faceTracker;
-        private ThreadPoolTimer frameProcessingTimer;
-        private SemaphoreSlim frameProcessingSemaphore = new SemaphoreSlim(1); // face tracking only one at a time
+        private FaceDetectionEffect faceDetectionEffect;
 
         public MainPage()
         {
@@ -88,10 +87,7 @@ namespace MirrorManager.UWP
 
             await InitializeCameraAsync();
 
-            if (faceTracker == null)
-            {
-                faceTracker = await FaceTracker.CreateAsync();
-            }
+            await CreateFaceDetectionEffectAsync();
         }
 
         protected async override void OnNavigatedFrom(NavigationEventArgs e)
@@ -101,12 +97,6 @@ namespace MirrorManager.UWP
             UnregisterOrientationEventHandlers();
 
             await CleanupCameraAsync();
-
-            if (frameProcessingTimer != null)
-            {
-                frameProcessingTimer.Cancel();
-                frameProcessingTimer = null;
-            }
         }
 
         private void RegisterOrientationEventHandlers()
@@ -166,7 +156,7 @@ namespace MirrorManager.UWP
                 await image.SetSourceAsync(stream);
                 photo.Source = image;
 
-                await FaceApiHelper.AddPersonFaceAsync("", "", stream);
+                await FaceApiHelper.AddPersonFaceAsync("userfaces", "7bc99d41-853a-4c15-b6dc-baf95bb06bd8", stream);
             }
             catch (Exception ex)
             {
@@ -202,8 +192,6 @@ namespace MirrorManager.UWP
                     isInitialized = true;
 
                     var deviceController = this.mediaCapture.VideoDeviceController;
-                    videoProperties = deviceController.GetMediaStreamProperties(MediaStreamType.VideoPreview) as VideoEncodingProperties;
-
                 }
                 catch (UnauthorizedAccessException)
                 {
@@ -227,9 +215,6 @@ namespace MirrorManager.UWP
                     }
 
                     await StartPreviewAsync();
-
-                    TimeSpan timerInterval = TimeSpan.FromMilliseconds(66);
-                    frameProcessingTimer = ThreadPoolTimer.CreatePeriodicTimer(new TimerElapsedHandler(ProcessCurrentVideoFrame), timerInterval);
                 }
             }
         }
@@ -248,6 +233,8 @@ namespace MirrorManager.UWP
 
             if (mediaCapture != null)
             {
+                faceDetectionEffect.Enabled = false;
+                faceDetectionEffect = null;
                 mediaCapture.Dispose();
                 mediaCapture = null;
             }
@@ -289,7 +276,8 @@ namespace MirrorManager.UWP
                 // error when stopping preview
             }
 
-            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {
+            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
                 photoPreview.Source = null;
                 displayRequest.RequestRelease();
             });
@@ -301,7 +289,7 @@ namespace MirrorManager.UWP
             if (externalCamera) return;
 
             //Populate orientation variables with the current state
-           displayOrientation = displayInformation.CurrentOrientation;
+            displayOrientation = displayInformation.CurrentOrientation;
 
             // Calculate which way and how far to rotate the preview
             int rotationDegrees = ConvertDisplayOrientationToDegrees(displayOrientation);
@@ -391,56 +379,28 @@ namespace MirrorManager.UWP
             return deviceOrientation;
         }
 
-        private async void ProcessCurrentVideoFrame(ThreadPoolTimer timer)
+        private async Task CreateFaceDetectionEffectAsync()
         {
+            var definition = new FaceDetectionEffectDefinition();
+            definition.SynchronousDetectionEnabled = false;
+            definition.DetectionMode = FaceDetectionMode.Balanced;
 
-            // If a lock is being held it means we're still waiting for processing work on the previous frame to complete.
-            // In this situation, don't wait on the semaphore but exit immediately.
-            if (!frameProcessingSemaphore.Wait(0))
-            {
-                return;
-            }
+            faceDetectionEffect = (FaceDetectionEffect)await mediaCapture.AddVideoEffectAsync(definition, MediaStreamType.VideoPreview);
+            faceDetectionEffect.FaceDetected += FaceDetectionEffect_FaceDetected;
+            faceDetectionEffect.DesiredDetectionInterval = TimeSpan.FromMilliseconds(66); // min. 33
 
-            try
-            {
-                IList<DetectedFace> faces = null;
-
-                // Create a VideoFrame object specifying the pixel format we want our capture image to be (NV12 bitmap in this case).
-                // GetPreviewFrame will convert the native webcam frame into this format.
-                const BitmapPixelFormat InputPixelFormat = BitmapPixelFormat.Nv12;
-                using (VideoFrame previewFrame = new VideoFrame(InputPixelFormat, (int)this.videoProperties.Width, (int)this.videoProperties.Height))
-                {
-                    await mediaCapture.GetPreviewFrameAsync(previewFrame);
-
-                    // The returned VideoFrame should be in the supported NV12 format but we need to verify this.
-                    if (FaceDetector.IsBitmapPixelFormatSupported(previewFrame.SoftwareBitmap.BitmapPixelFormat))
-                    {
-                        faces = await this.faceTracker.ProcessNextFrameAsync(previewFrame);
-                        Debug.WriteLine("Got faces: " + faces.Count.ToString());
-
-                        var nothing = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {
-                            (DataContext as MainPageViewModel).OneFacePresent = (faces.Count == 1);
-                        });
-                        
-                    }
-                    else
-                    {
-                        throw new System.NotSupportedException("PixelFormat '" + InputPixelFormat.ToString() + "' is not supported by FaceDetector");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                var ignored = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                {
-                    //this.rootPage.NotifyUser(ex.ToString(), NotifyType.ErrorMessage);
-                });
-            }
-            finally
-            {
-                frameProcessingSemaphore.Release();
-            }
+            faceDetectionEffect.Enabled = true;
         }
 
+        private void FaceDetectionEffect_FaceDetected(FaceDetectionEffect sender, FaceDetectedEventArgs args)
+        {
+            //Debug.WriteLine("Faces: {0}", args.ResultFrame.DetectedFaces.Count);
+
+            var nothing = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                (DataContext as MainPageViewModel).OneFacePresent = (args.ResultFrame.DetectedFaces.Count == 1);
+            });
+            
+        }
     }
 }
