@@ -8,19 +8,22 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
         <ProgressBar x:Name="progress" Visibility="Collapsed" />
 
-        <TextBlock Style="{StaticResource HeaderTextBlockStyle}">MagicMirrorManager Login</TextBlock>
-        
-        <!-- TODO: image na pozadí -->
-        <StackPanel Grid.Row="1">
-            <Button Content="Login with Office 365" Click="Login_Click" />
-            <TextBlock x:Name="txtStatus" />
+        <StackPanel VerticalAlignment="Center" Margin="16">
+            <TextBlock Style="{StaticResource HeaderTextBlockStyle}">Hello,</TextBlock>
+            <TextBlock Style="{StaticResource SubheaderTextBlockStyle}">let's manage your Magic Mirror!</TextBlock>
+            
+            <Button Click="Login_Click" Margin="0,16">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Assets/Office365Logo-32.png" Margin="0,0,16,0" Height="24" />
+                        <TextBlock VerticalAlignment="Center" FontSize="16">Login with Office 365</TextBlock>
+                    </StackPanel>
+                </Button.Content>
+            </Button>
         </StackPanel>
+
+        <TextBlock x:Name="txtStatus" VerticalAlignment="Bottom" />
     </Grid>
 </Page>
