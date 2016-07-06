@@ -31,9 +31,9 @@ namespace MirrorManager.UWP
 
         private async void Login_Click(object sender, RoutedEventArgs e)
         {
-            progress.Visibility = Visibility.Visible;
+            VisualStateManager.GoToState(this, "LoggingIn", false);
             await SignInUserAsync();
-            progress.Visibility = Visibility.Collapsed;
+            VisualStateManager.GoToState(this, "Ready", false);
         }
 
         private async Task SignInUserAsync()

@@ -8,16 +8,34 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <ProgressBar x:Name="progress" Visibility="Collapsed" />
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="Ready">
+                    <VisualState.Setters>
+                        <Setter Target="loginButton.IsEnabled" Value="True" />
+                        <Setter Target="progress.Visibility" Value="Collapsed" />
+                        <Setter Target="officeLogo.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="LoggingIn">
+                    <VisualState.Setters>
+                        <Setter Target="loginButton.IsEnabled" Value="False" />
+                        <Setter Target="progress.Visibility" Value="Visible" />
+                        <Setter Target="officeLogo.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
 
         <StackPanel VerticalAlignment="Center" Margin="16">
             <TextBlock Style="{StaticResource HeaderTextBlockStyle}">Hello,</TextBlock>
             <TextBlock Style="{StaticResource SubheaderTextBlockStyle}">let's manage your Magic Mirror!</TextBlock>
             
-            <Button Click="Login_Click" Margin="0,16">
+            <Button x:Name="loginButton" Click="Login_Click" Margin="0,16">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="Assets/Office365Logo-32.png" Margin="0,0,16,0" Height="24" />
+                        <Image x:Name="officeLogo" Source="Assets/Office365Logo-32.png" Margin="0,0,16,0" Height="24" />
+                        <ProgressRing x:Name="progress" Margin="0,0,16,0" Height="24" Width="24" IsActive="True" Visibility="Collapsed" />
                         <TextBlock VerticalAlignment="Center" FontSize="16">Login with Office 365</TextBlock>
                     </StackPanel>
                 </Button.Content>
