@@ -16,6 +16,7 @@
         
         <StackPanel Padding="24" Grid.Column="0">
             <TextBlock Text="{Binding Greeting}" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock Text="{Binding OxfordStatus}" />
         </StackPanel>
 
         <Grid Grid.Column="1">

@@ -60,6 +60,9 @@ namespace MirrorManager.UWP
 
         private FaceDetectionEffect faceDetectionEffect;
 
+        private const string personGroupId = "userfaces";
+        private OxfordPerson currentPerson = null;
+
         public MainPage()
         {
             this.InitializeComponent();
@@ -68,6 +71,8 @@ namespace MirrorManager.UWP
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+
+            viewModel = (MainPageViewModel)DataContext;
 
             RegisterOrientationEventHandlers();
 
@@ -83,12 +88,26 @@ namespace MirrorManager.UWP
                 OfficeUser user = JsonConvert.DeserializeObject<OfficeUser>(res);
 
                 ((MainPageViewModel)DataContext).UserName = user.displayName;
+
+                viewModel.OxfordStatus = "Checking if we know you...";
+
+                bool userRegistered = await checkUserRegistrationAsync();
+                if (!userRegistered)
+                {
+                    viewModel.OxfordStatus = "Looks like we haven't seen you yet. \nNo problem, take some pictures of your face. Five should be enough.";
+                }
+                else
+                {
+                    viewModel.OxfordStatus = "Welcome back. Do you want to recalibrate?";
+                }
             }
 
             await InitializeCameraAsync();
 
             await CreateFaceDetectionEffectAsync();
         }
+
+
 
         protected async override void OnNavigatedFrom(NavigationEventArgs e)
         {
@@ -141,6 +160,19 @@ namespace MirrorManager.UWP
 
         private async void TakePicture_Click(object sender, RoutedEventArgs e)
         {
+            if (currentPerson == null)
+            {
+                Debug.WriteLine("Creating person in group.");
+                var id = await FaceApiHelper.CreatePersonInGroup(personGroupId, App.Settings.Values["userID"].ToString(), viewModel.UserName);
+                Debug.WriteLine("Person created with ID: " + id);
+                currentPerson = new OxfordPerson()
+                {
+                    personId = id,
+                    name = viewModel.UserName,
+                    userData = App.Settings.Values["userID"].ToString()
+                };
+            }
+
             var stream = new InMemoryRandomAccessStream();
 
             try
@@ -156,7 +188,8 @@ namespace MirrorManager.UWP
                 await image.SetSourceAsync(stream);
                 photo.Source = image;
 
-                await FaceApiHelper.AddPersonFaceAsync("userfaces", "7bc99d41-853a-4c15-b6dc-baf95bb06bd8", stream);
+                var faceId = await FaceApiHelper.AddPersonFaceAsync(personGroupId, currentPerson.personId, stream);
+                Debug.WriteLine("Face added with ID: " + faceId);
             }
             catch (Exception ex)
             {
@@ -401,6 +434,31 @@ namespace MirrorManager.UWP
                 (DataContext as MainPageViewModel).OneFacePresent = (args.ResultFrame.DetectedFaces.Count == 1);
             });
             
+        }
+
+        private async Task<bool> checkUserRegistrationAsync()
+        {
+            var userId = App.Settings.Values["userID"].ToString();
+            var people = await FaceApiHelper.GetPeopleInGroupAsync(personGroupId);
+
+            if (people.Count == 0)
+            {
+                return false; // no users yet
+            }
+            
+            var res = (from p in people
+                      where p.userData == userId
+                      select p).FirstOrDefault();
+
+            if (res == null)
+            {
+                return false; // user not registered
+            }
+            else
+            {
+                currentPerson = res;
+                return true;
+            }
         }
     }
 }

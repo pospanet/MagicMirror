@@ -98,6 +98,8 @@
     <Compile Include="Helpers\AuthenticationHelper.cs" />
     <Compile Include="Helpers\CalendarHelper.cs" />
     <Compile Include="Helpers\FaceApiHelper.cs" />
+    <Compile Include="Helpers\OxfordError.cs" />
+    <Compile Include="Helpers\OxfordPerson.cs" />
     <Compile Include="LoginPage.xaml.cs">
       <DependentUpon>LoginPage.xaml</DependentUpon>
     </Compile>

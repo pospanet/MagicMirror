@@ -12,7 +12,6 @@ namespace MirrorManager.UWP.ViewModels
     {
 
         private string userName;
-
         public string UserName
         {
             get { return userName; }
@@ -22,12 +21,19 @@ namespace MirrorManager.UWP.ViewModels
         public string Greeting => $"Hello, {UserName}";
 
         private bool oneFacePresent;
-
         public bool OneFacePresent
         {
             get { return oneFacePresent; }
             set { Set(ref oneFacePresent, value); }
         }
+
+        private string oxfordStatus;
+        public string OxfordStatus
+        {
+            get { return oxfordStatus; }
+            set { Set(ref oxfordStatus, value); }
+        }
+
 
         #region INotifyPropertyChanged
 
