@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MirrorManager.UWP.DAO
+namespace Mirror.Common.DTO
 {
 
-    public class UserObject
+    public class OfficeUser
     {
         public string id { get; set; }
         public string[] businessPhones { get; set; }

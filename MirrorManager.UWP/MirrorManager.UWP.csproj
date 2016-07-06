@@ -95,8 +95,6 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DAO\CalendarObject.cs" />
-    <Compile Include="DAO\UserObject.cs" />
     <Compile Include="Helpers\AuthenticationHelper.cs" />
     <Compile Include="Helpers\CalendarHelper.cs" />
     <Compile Include="Helpers\FaceApiHelper.cs" />
@@ -139,6 +137,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Mirror.Common\Mirror.Common.csproj">
+      <Project>{70688f6a-d781-440e-9ab9-8176faa0ce2f}</Project>
+      <Name>Mirror.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

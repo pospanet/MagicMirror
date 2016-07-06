@@ -1,4 +1,4 @@
-﻿using MirrorManager.UWP.DAO;
+﻿using Mirror.Common.DTO;
 using MirrorManager.UWP.Helpers;
 using MirrorManager.UWP.ViewModels;
 using Newtonsoft.Json;
@@ -80,7 +80,7 @@ namespace MirrorManager.UWP
             if (result.IsSuccessStatusCode)
             {
                 string res = await result.Content.ReadAsStringAsync();
-                UserObject user = JsonConvert.DeserializeObject<UserObject>(res);
+                OfficeUser user = JsonConvert.DeserializeObject<OfficeUser>(res);
 
                 ((MainPageViewModel)DataContext).UserName = user.displayName;
             }
