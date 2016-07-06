@@ -34,6 +34,7 @@ namespace MirrorManager.UWP.Helpers
 
         public static async Task<string> CreatePersonInGroup(string groupId, string userId, string userName)
         {
+            userName = userName.Length > 128 ? userName.Substring(0, 127) : userName;
             var content = new StringContent($"{{\"name\": \"{userName}\", \"userData\": \"{userId}\" }}", Encoding.UTF8, "application/json");
 
             var hc = CreateClient();
@@ -71,6 +72,34 @@ namespace MirrorManager.UWP.Helpers
                 var error = JsonConvert.DeserializeObject<OxfordError>(await response.Content.ReadAsStringAsync());
                 throw new Exception(error.Message);
             }
+        }
+
+        public static async Task<bool> UpdatePersonAsync(string groupId, string personId, string newUserName = null, string newUserData = null)
+        {
+            if (newUserName == null && newUserData == null)
+                return true;
+
+            JsonObject attributes = new JsonObject();
+            
+            if (newUserName != null)
+            {
+                attributes.SetNamedValue("name", JsonValue.CreateStringValue(newUserName));
+            }
+
+            if (newUserData != null)
+            {
+                attributes.Add("userData", JsonValue.CreateStringValue(newUserData));
+            }
+
+            HttpRequestMessage request = new HttpRequestMessage(new HttpMethod("PATCH"), $"persongroups/{groupId}/persons/{personId}")
+            {
+                Content = new StringContent(attributes.ToString(), Encoding.UTF8, "application/json")
+            };
+
+            var hc = CreateClient();
+            var response = await hc.SendAsync(request);
+
+            return response.IsSuccessStatusCode;
         }
 
         private static HttpClient CreateClient()

@@ -460,5 +460,14 @@ namespace MirrorManager.UWP
                 return true;
             }
         }
+
+        private async void UpdateOxford_Click(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("Updating...");
+
+            var res = await FaceApiHelper.UpdatePersonAsync(personGroupId, currentPerson.personId, "Michal Martin");
+
+            Debug.WriteLine(res);
+        }
     }
 }
