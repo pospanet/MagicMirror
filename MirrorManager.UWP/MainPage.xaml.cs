@@ -1,4 +1,5 @@
 ﻿using Mirror.Common.DTO;
+using Mirror.Common.Utils;
 using MirrorManager.UWP.Helpers;
 using MirrorManager.UWP.ViewModels;
 using Newtonsoft.Json;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
@@ -165,43 +167,59 @@ namespace MirrorManager.UWP
             if (currentPerson == null)
             {
                 Debug.WriteLine("Creating person in group.");
-                var id = await FaceApiHelper.CreatePersonInGroup(personGroupId, App.Settings.Values["userID"].ToString(), viewModel.UserName);
+
+                var userData = new UserData(App.Settings.Values["userID"].ToString(), App.Settings.Values["Token"].ToString());
+                var id = await FaceApiHelper.CreatePersonInGroupAsync(personGroupId, viewModel.UserName, userData);
+
                 Debug.WriteLine("Person created with ID: " + id);
+
                 currentPerson = new OxfordPerson()
                 {
                     personId = id,
                     name = viewModel.UserName,
-                    userData = App.Settings.Values["userID"].ToString()
+                    userData = JsonConvert.SerializeObject(userData).EncodeBase64(Encoding.UTF8)
                 };
             }
 
-            var stream = new InMemoryRandomAccessStream();
+            var stream = await capturePhotoStreamAsync();
 
-            try
+            if (stream != null)
             {
-                Debug.WriteLine("Taking photo...");
-                await mediaCapture.CapturePhotoToStreamAsync(ImageEncodingProperties.CreateJpeg(), stream);
-                Debug.WriteLine("Photo taken!");
-
-                var photoOrientation = ConvertOrientationToPhotoOrientation(GetCameraOrientation());
-
                 var image = new BitmapImage();
-                stream.Seek(0);
                 await image.SetSourceAsync(stream);
                 photo.Source = image;
 
                 var faceId = await FaceApiHelper.AddPersonFaceAsync(personGroupId, currentPerson.personId, stream);
-                Debug.WriteLine("Face added with ID: " + faceId);
+                Debug.WriteLine($"Face added to person {currentPerson.personId} with ID: {faceId}");
+
+                stream.Dispose();
+            }
+            else
+            {
+                viewModel.OxfordStatus = "Unable to capture the photo.";
+            }
+
+        }
+
+        private async Task<InMemoryRandomAccessStream> capturePhotoStreamAsync()
+        {
+            var stream = new InMemoryRandomAccessStream();
+
+            try
+            {
+                Debug.WriteLine("Capturing photo...");
+                await mediaCapture.CapturePhotoToStreamAsync(ImageEncodingProperties.CreateJpeg(), stream);
+                Debug.WriteLine("Photo captured!");
+
+                stream.Seek(0);
+
+                return stream;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Exception when taking a photo: {0}", ex.ToString());
+                Debug.WriteLine("Exception when capturing a photo: {0}", ex.ToString());
+                return null;
             }
-            finally
-            {
-                stream.Dispose();
-            }
-
         }
 
         private async Task InitializeCameraAsync()
@@ -450,7 +468,7 @@ namespace MirrorManager.UWP
             }
             
             var res = (from p in people
-                      where p.userData == userId
+                      where JsonConvert.DeserializeObject<UserData>(p.userData.DecodeBase64(Encoding.UTF8)).UserId == userId
                       select p).FirstOrDefault();
 
             if (res == null)
@@ -477,34 +495,23 @@ namespace MirrorManager.UWP
         {
             Debug.WriteLine("Checking if it works...");
 
-            var stream = new InMemoryRandomAccessStream();
+            var stream = await capturePhotoStreamAsync();
 
-            try
+            if (stream != null)
             {
-                Debug.WriteLine("Taking photo...");
-                await mediaCapture.CapturePhotoToStreamAsync(ImageEncodingProperties.CreateJpeg(), stream);
-                Debug.WriteLine("Photo taken!");
-
-                var photoOrientation = ConvertOrientationToPhotoOrientation(GetCameraOrientation());
-
                 var image = new BitmapImage();
-                stream.Seek(0);
                 await image.SetSourceAsync(stream);
                 photo.Source = image;
 
                 var res = await FaceApiHelper.IdentifyPersonAsync(personGroupId, stream);
-
                 viewModel.FaceRecognized = (currentPerson.personId == res);
-
                 Debug.WriteLine($"Logged in person: {currentPerson.personId}, identified person: {res}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Exception when taking a photo: {0}", ex.ToString());
-            }
-            finally
-            {
+
                 stream.Dispose();
+            }
+            else
+            {
+                viewModel.OxfordStatus = "Unable to capture photo.";
             }
         }
     }

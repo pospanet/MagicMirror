@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Linq;
 using System.Threading.Tasks;
 using Windows.Security.Authentication.Web;
 using Windows.Security.Authentication.Web.Core;
 using Windows.Security.Credentials;
-using Windows.Storage;
-
 
 namespace MirrorManager.UWP
 {
@@ -50,7 +45,6 @@ namespace MirrorManager.UWP
                     WebTokenResponse webTokenResponse = webTokenRequestResult.ResponseData[0];
                     userAccount = webTokenResponse.WebAccount;
                     token = webTokenResponse.Token;
-
                 }
                 else
                 {
@@ -110,12 +104,7 @@ namespace MirrorManager.UWP
 
         }
 
-        public static string GetAppRedirectURI()
-        {
-            // Windows 10 universal apps require redirect URI in the format below. Add a breakpoint to this line and run the app before you register it, so that
-            // you can supply the correct redirect URI value.
-            return string.Format("ms-appx-web://microsoft.aad.brokerplugin/{0}", WebAuthenticationBroker.GetCurrentApplicationCallbackUri().Host).ToUpper();
-        }
+        public static string GetAppRedirectURI() => string.Format("ms-appx-web://microsoft.aad.brokerplugin/{0}", WebAuthenticationBroker.GetCurrentApplicationCallbackUri().Host).ToUpper();
 
     }
 }

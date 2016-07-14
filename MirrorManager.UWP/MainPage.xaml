@@ -63,23 +63,24 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <CaptureElement x:Name="photoPreview" Stretch="Uniform" />
-                            <Image x:Name="photo" />
+                            <Image x:Name="photo" Width="200" />
                         </StackPanel>
 
                         <TextBlock Text="Look into the camera." Visibility="{Binding OneFacePresent, Converter={StaticResource VisibleWhenFalseConverter}}" />
-                        <TextBlock Text="I recognize you when you look like this." Visibility="{Binding FaceRecognized, Converter={StaticResource VisibleWhenTrueConverter}}" />
+                        <TextBlock Text="This looks like you." Visibility="{Binding FaceRecognized, Converter={StaticResource VisibleWhenTrueConverter}}" Foreground="Green" />
+                        <TextBlock Text="This doesn't look like you." Visibility="{Binding FaceRecognized, Converter={StaticResource VisibleWhenFalseConverter}}" Foreground="Red" />
                     </StackPanel>
                 </Border>
 
                 <StackPanel Orientation="Horizontal">
                     <AppBarButton Label="Take a picture" Icon="Camera" Click="TakePicture_Click" IsEnabled="{Binding OneFacePresent}" />
-                    <AppBarButton Label="Do you recognize me?" Icon="OtherUser" Click="IdentifyCheck_Click" />
+                    <AppBarButton Label="Test recognition" Icon="OtherUser" Click="IdentifyCheck_Click" />
                 </StackPanel>
             </StackPanel>
 
-            <StackPanel x:Name="initializingPhoto">
+            <StackPanel x:Name="initializingPhoto" Orientation="Horizontal">
+                <ProgressRing IsActive="True" Width="24" Height="24" Margin="0,0,12,0" />
                 <TextBlock Text="Initializing photo frame..." />
-                <ProgressRing IsActive="True" />
             </StackPanel>
         </StackPanel>
     </Grid>

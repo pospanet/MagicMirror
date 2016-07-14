@@ -10,6 +10,8 @@ using Newtonsoft.Json;
 using Windows.Data.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
+using Mirror.Common.Utils;
+using Mirror.Common.DTO;
 
 namespace MirrorManager.UWP.Helpers
 {
@@ -34,10 +36,13 @@ namespace MirrorManager.UWP.Helpers
             }
         }
 
-        public static async Task<string> CreatePersonInGroup(string groupId, string userId, string userName)
+        public static async Task<string> CreatePersonInGroupAsync(string groupId, string userName, UserData userData)
         {
             userName = userName.Length > 128 ? userName.Substring(0, 127) : userName;
-            var content = new StringContent($"{{\"name\": \"{userName}\", \"userData\": \"{userId}\" }}", Encoding.UTF8, "application/json");
+
+            var jsonUserData = JsonConvert.SerializeObject(userData).EncodeBase64(Encoding.UTF8);
+
+            var content = new StringContent($"{{\"name\": \"{userName}\", \"userData\": \"{jsonUserData}\" }}", Encoding.UTF8, "application/json");
 
             var hc = CreateClient();
             var response = await hc.PostAsync($"persongroups/{groupId}/persons", content);
@@ -63,7 +68,6 @@ namespace MirrorManager.UWP.Helpers
             var hc = CreateClient();
             var response = await hc.PostAsync($"persongroups/{groupId}/persons/{personId}/persistedFaces", content);
 
-            // persistedFaceId
             if (response.IsSuccessStatusCode)
             {
                 var face = JsonObject.Parse(await response.Content.ReadAsStringAsync());
