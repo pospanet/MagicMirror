@@ -5,33 +5,82 @@
     xmlns:local="using:MirrorManager.UWP"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:MirrorManager.UWP.Converters"
     mc:Ignorable="d"
     DataContext="{Binding Source={StaticResource ViewModelLocator}, Path=MainPage}">
 
+    <Page.Resources>
+        <converters:ValueWhenConverter x:Key="VisibleWhenTrueConverter">
+            <converters:ValueWhenConverter.When>
+                <x:Boolean>True</x:Boolean>
+            </converters:ValueWhenConverter.When>
+            <converters:ValueWhenConverter.Value>
+                <Visibility>Visible</Visibility>
+            </converters:ValueWhenConverter.Value>
+            <converters:ValueWhenConverter.Otherwise>
+                <Visibility>Collapsed</Visibility>
+            </converters:ValueWhenConverter.Otherwise>
+        </converters:ValueWhenConverter>
+        <converters:ValueWhenConverter x:Key="VisibleWhenFalseConverter">
+            <converters:ValueWhenConverter.When>
+                <x:Boolean>False</x:Boolean>
+            </converters:ValueWhenConverter.When>
+            <converters:ValueWhenConverter.Value>
+                <Visibility>Visible</Visibility>
+            </converters:ValueWhenConverter.Value>
+            <converters:ValueWhenConverter.Otherwise>
+                <Visibility>Collapsed</Visibility>
+            </converters:ValueWhenConverter.Otherwise>
+        </converters:ValueWhenConverter>
+    </Page.Resources>
+    
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="InitializingPhoto">
+                    <VisualState.Setters>
+                        <Setter Target="photoArea.Visibility" Value="Collapsed" />
+                        <Setter Target="initializingPhoto.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="PhotoReady">
+                    <VisualState.Setters>
+                        <Setter Target="photoArea.Visibility" Value="Visible" />
+                        <Setter Target="initializingPhoto.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         
-        <StackPanel Padding="24" Grid.Column="0">
+        <StackPanel Padding="24">
             <TextBlock Text="{Binding Greeting}" Style="{StaticResource TitleTextBlockStyle}" />
             <TextBlock Text="{Binding OxfordStatus}" />
 
             <Button Content="update oxford" Click="UpdateOxford_Click" />
-        </StackPanel>
 
-        <Grid Grid.Column="1">
-            <Border BorderBrush="Gray" BorderThickness="2" Width="300" Height="400">
-                <ScrollViewer>
+            <StackPanel x:Name="photoArea">
+                <Border BorderBrush="Gray" BorderThickness="2" Width="Auto" Height="Auto">
                     <StackPanel>
-                        <CaptureElement x:Name="photoPreview" Stretch="Uniform" />
-                        <MediaElement x:Name="photoFrame" />
-                        <Button Content="Take a picture" Click="TakePicture_Click" IsEnabled="{Binding OneFacePresent}" />
-                        <Image x:Name="photo" />
+                        <StackPanel Orientation="Horizontal">
+                            <CaptureElement x:Name="photoPreview" Stretch="Uniform" />
+                            <Image x:Name="photo" />
+                        </StackPanel>
+
+                        <TextBlock Text="Look into the camera." Visibility="{Binding OneFacePresent, Converter={StaticResource VisibleWhenFalseConverter}}" />
+                        <TextBlock Text="I recognize you when you look like this." Visibility="{Binding FaceRecognized, Converter={StaticResource VisibleWhenTrueConverter}}" />
                     </StackPanel>
-                </ScrollViewer>
-            </Border>
-        </Grid>
+                </Border>
+
+                <StackPanel Orientation="Horizontal">
+                    <AppBarButton Label="Take a picture" Icon="Camera" Click="TakePicture_Click" IsEnabled="{Binding OneFacePresent}" />
+                    <AppBarButton Label="Do you recognize me?" Icon="OtherUser" Click="IdentifyCheck_Click" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel x:Name="initializingPhoto">
+                <TextBlock Text="Initializing photo frame..." />
+                <ProgressRing IsActive="True" />
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </Page>

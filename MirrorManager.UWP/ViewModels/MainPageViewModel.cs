@@ -27,6 +27,15 @@ namespace MirrorManager.UWP.ViewModels
             set { Set(ref oneFacePresent, value); }
         }
 
+        private bool faceRecognized;
+
+        public bool FaceRecognized
+        {
+            get { return faceRecognized; }
+            set { Set(ref faceRecognized, value); }
+        }
+
+
         private string oxfordStatus;
         public string OxfordStatus
         {

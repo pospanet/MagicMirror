@@ -1,5 +1,6 @@
 ﻿{
   "dependencies": {
+    "Microsoft.IdentityModel.Clients.ActiveDirectory": "3.10.305231913",
     "Microsoft.NETCore.UniversalWindowsPlatform": "5.1.0",
     "Newtonsoft.Json": "9.0.1"
   },

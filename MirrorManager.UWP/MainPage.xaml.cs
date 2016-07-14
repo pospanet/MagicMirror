@@ -72,6 +72,8 @@ namespace MirrorManager.UWP
         {
             base.OnNavigatedTo(e);
 
+            VisualStateManager.GoToState(this, "InitializingPhoto", false);
+
             viewModel = (MainPageViewModel)DataContext;
 
             RegisterOrientationEventHandlers();
@@ -294,6 +296,7 @@ namespace MirrorManager.UWP
             if (isPreviewing)
             {
                 await SetPreviewRotationAsync();
+                VisualStateManager.GoToState(this, "PhotoReady", false);
             }
         }
 
@@ -468,6 +471,41 @@ namespace MirrorManager.UWP
             var res = await FaceApiHelper.UpdatePersonAsync(personGroupId, currentPerson.personId, "Michal Martin");
 
             Debug.WriteLine(res);
+        }
+
+        private async void IdentifyCheck_Click(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("Checking if it works...");
+
+            var stream = new InMemoryRandomAccessStream();
+
+            try
+            {
+                Debug.WriteLine("Taking photo...");
+                await mediaCapture.CapturePhotoToStreamAsync(ImageEncodingProperties.CreateJpeg(), stream);
+                Debug.WriteLine("Photo taken!");
+
+                var photoOrientation = ConvertOrientationToPhotoOrientation(GetCameraOrientation());
+
+                var image = new BitmapImage();
+                stream.Seek(0);
+                await image.SetSourceAsync(stream);
+                photo.Source = image;
+
+                var res = await FaceApiHelper.IdentifyPersonAsync(personGroupId, stream);
+
+                viewModel.FaceRecognized = (currentPerson.personId == res);
+
+                Debug.WriteLine($"Logged in person: {currentPerson.personId}, identified person: {res}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Exception when taking a photo: {0}", ex.ToString());
+            }
+            finally
+            {
+                stream.Dispose();
+            }
         }
     }
 }
