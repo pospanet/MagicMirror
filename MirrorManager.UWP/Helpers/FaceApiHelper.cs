@@ -110,10 +110,10 @@ namespace MirrorManager.UWP.Helpers
             return true;
         }
 
-        public static async Task<string> IdentifyPersonAsync(string groupId, InMemoryRandomAccessStream photoStream)
+        public static async Task<string> DetectPersonAsync(string gorupId, InMemoryRandomAccessStream photoStream)
         {
-            // First detect face and get Face ID.
             // https://api.projectoxford.ai/face/v1.0/detect
+
             photoStream.Seek(0);
             var content = new StreamContent(photoStream.AsStreamForRead());
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
@@ -121,20 +121,24 @@ namespace MirrorManager.UWP.Helpers
             var hc = CreateClient();
             var response = await hc.PostAsync($"detect", content);
 
-            string faceId = null;
-
-            if (response.IsSuccessStatusCode)
-            {
-                string rawResponse = await response.Content.ReadAsStringAsync();
-                rawResponse = rawResponse.Trim(new char[] { '[', ']' });
-
-                JObject face = JObject.Parse(rawResponse);
-                faceId = face["faceId"].ToString();
-            }
-            else
+            if (!response.IsSuccessStatusCode)
             {
                 throw new OxfordException($"Error when sending Detect request: {await response.Content.ReadAsStringAsync()}");
             }
+
+            string rawResponse = await response.Content.ReadAsStringAsync();
+            rawResponse = rawResponse.Trim(new char[] { '[', ']' });
+
+            JObject face = JObject.Parse(rawResponse);
+            string faceId = face["faceId"].ToString();
+
+            return faceId;
+        }
+
+        public static async Task<string> IdentifyPersonAsync(string groupId, InMemoryRandomAccessStream photoStream)
+        {
+            // First detect face and get Face ID.
+            string faceId = await DetectPersonAsync(groupId, photoStream);
 
             // Then identify who that is.
             // https://api.projectoxford.ai/face/v1.0/identify
@@ -142,20 +146,19 @@ namespace MirrorManager.UWP.Helpers
             {
                 OxfordIdentifyRequest req = new OxfordIdentifyRequest(groupId, faceId);
                 var requestContent = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
+                var hc = CreateClient();
                 var resp = await hc.PostAsync("identify", requestContent);
 
-                if (resp.IsSuccessStatusCode)
-                {
-                    var personRawString = await resp.Content.ReadAsStringAsync();
-                    var identifiedPerson = JsonConvert.DeserializeObject<List<OxfordIdentifyResponse>>(personRawString);
-
-                    var personId = identifiedPerson[0].candidates[0].personId;
-                    return personId;
-                }
-                else
+                if (!resp.IsSuccessStatusCode)
                 {
                     throw new OxfordException($"Error when sedning Identify request: {await resp.Content.ReadAsStringAsync()}");
                 }
+
+                var personRawString = await resp.Content.ReadAsStringAsync();
+                var identifiedPerson = JsonConvert.DeserializeObject<List<OxfordIdentifyResponse>>(personRawString);
+
+                var personId = identifiedPerson[0].candidates[0].personId;
+                return personId;
             }
 
             return string.Empty;
