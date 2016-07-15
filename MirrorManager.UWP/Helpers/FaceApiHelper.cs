@@ -127,9 +127,7 @@ namespace MirrorManager.UWP.Helpers
             }
 
             string rawResponse = await response.Content.ReadAsStringAsync();
-            rawResponse = rawResponse.Trim(new char[] { '[', ']' });
-
-            JObject face = JObject.Parse(rawResponse);
+            JObject face = JObject.Parse(rawResponse.Trim(new char[] { '[', ']' })); // response contains characters which block parsing
             string faceId = face["faceId"].ToString();
 
             return faceId;
