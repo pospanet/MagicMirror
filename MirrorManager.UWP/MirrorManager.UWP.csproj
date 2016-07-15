@@ -99,6 +99,7 @@
     <Compile Include="Helpers\CalendarHelper.cs" />
     <Compile Include="Helpers\FaceApiHelper.cs" />
     <Compile Include="Helpers\OxfordError.cs" />
+    <Compile Include="Helpers\OxfordException.cs" />
     <Compile Include="Helpers\OxfordIdentifyRequest.cs" />
     <Compile Include="Helpers\OxfordIdentifyResponse.cs" />
     <Compile Include="Helpers\OxfordPerson.cs" />

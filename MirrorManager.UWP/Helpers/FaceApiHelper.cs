@@ -31,8 +31,7 @@ namespace MirrorManager.UWP.Helpers
             }
             else
             {
-                var error = JsonConvert.DeserializeObject<OxfordError>(await response.Content.ReadAsStringAsync());
-                throw new Exception(error.Message);
+                throw new OxfordException(await response.Content.ReadAsStringAsync());
             }
         }
 
@@ -54,8 +53,7 @@ namespace MirrorManager.UWP.Helpers
             }
             else
             {
-                var error = JsonConvert.DeserializeObject<OxfordError>(await response.Content.ReadAsStringAsync());
-                throw new Exception(error.Message);
+                throw new OxfordException(await response.Content.ReadAsStringAsync());
             }
         }
 
@@ -75,8 +73,7 @@ namespace MirrorManager.UWP.Helpers
             }
             else
             {
-                var error = JsonConvert.DeserializeObject<OxfordError>(await response.Content.ReadAsStringAsync());
-                throw new Exception(error.Message);
+                throw new OxfordException(await response.Content.ReadAsStringAsync());
             }
         }
 
@@ -131,8 +128,7 @@ namespace MirrorManager.UWP.Helpers
             }
             else
             {
-                var error = JsonConvert.DeserializeObject<OxfordError>(await response.Content.ReadAsStringAsync());
-                throw new Exception(error.Message);
+                throw new OxfordException($"Error when sending Detect request: {await response.Content.ReadAsStringAsync()}");
             }
 
             // Then identify who that is.
@@ -153,11 +149,24 @@ namespace MirrorManager.UWP.Helpers
                 }
                 else
                 {
-                    // chyba
+                    throw new OxfordException($"Error when sedning Identify request: {await resp.Content.ReadAsStringAsync()}");
                 }
             }
 
             return string.Empty;
+        }
+
+        public async static Task<bool> TrainModelAsync(string groupId)
+        {
+            var hc = CreateClient();
+            var resp = await hc.PostAsync($"persongroups/{groupId}/train", null);
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                throw new OxfordException($"Error when sedning Train request: {await resp.Content.ReadAsStringAsync()}");
+            }
+
+            return true;
         }
 
         private static HttpClient CreateClient()
