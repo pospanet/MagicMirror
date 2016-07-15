@@ -102,7 +102,12 @@ namespace MirrorManager.UWP.Helpers
             var hc = CreateClient();
             var response = await hc.SendAsync(request);
 
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new OxfordException(await response.Content.ReadAsStringAsync());
+            }
+
+            return true;
         }
 
         public static async Task<string> IdentifyPersonAsync(string groupId, InMemoryRandomAccessStream photoStream)
