@@ -40,7 +40,7 @@ namespace MirrorManager.UWP.Services
         {
             userName = userName.Length > 128 ? userName.Substring(0, 127) : userName;
 
-            var jsonUserData = JsonConvert.SerializeObject(userData).EncodeBase64(Encoding.UTF8);
+            var jsonUserData = JsonConvert.SerializeObject(userData).EncodeBase64();
 
             var content = new StringContent($"{{\"name\": \"{userName}\", \"userData\": \"{jsonUserData}\" }}", Encoding.UTF8, "application/json");
 
