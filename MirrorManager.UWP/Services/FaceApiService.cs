@@ -78,6 +78,11 @@ namespace MirrorManager.UWP.Services
             }
         }
 
+        public static Task<bool> UpdatePersonAsync(string groupId, OxfordPerson person)
+        {
+            return UpdatePersonAsync(groupId, person.personId, person.name, person.userData);
+        }
+
         public static async Task<bool> UpdatePersonAsync(string groupId, string personId, string newUserName = null, string newUserData = null)
         {
             if (newUserName == null && newUserData == null)
@@ -184,6 +189,10 @@ namespace MirrorManager.UWP.Services
 
             return hc;
         }
+
+        public static string SerializeUserData(UserData input) => JsonConvert.SerializeObject(input).EncodeBase64();
+
+        public static UserData DeserializeUserData(string input) => JsonConvert.DeserializeObject<UserData>(input.DecodeBase64());
 
     }
 }

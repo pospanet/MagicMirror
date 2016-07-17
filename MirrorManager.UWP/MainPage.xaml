@@ -56,8 +56,6 @@
             <TextBlock Text="{Binding Greeting}" Style="{StaticResource TitleTextBlockStyle}" />
             <TextBlock Text="{Binding OxfordStatus}" />
 
-            <Button Content="update oxford" Click="UpdateOxford_Click" />
-
             <StackPanel x:Name="photoArea">
                 <Border BorderBrush="Gray" BorderThickness="2" Width="Auto" Height="Auto">
                     <StackPanel>

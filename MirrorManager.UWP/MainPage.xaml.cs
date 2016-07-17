@@ -81,7 +81,7 @@ namespace MirrorManager.UWP
 
             RegisterOrientationEventHandlers();
 
-            var token = App.Settings.Values["Token"];
+            var token = App.Settings.Values["Token"].ToString();
 
             HttpClient hc = new HttpClient();
             hc.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
@@ -104,6 +104,12 @@ namespace MirrorManager.UWP
                 else
                 {
                     viewModel.OxfordStatus = "Welcome back. Do you want to recalibrate?";
+
+                    var ud = FaceApiService.DeserializeUserData(currentPerson.userData);
+                    ud.AccessToken = token;
+                    currentPerson.userData = FaceApiService.SerializeUserData(ud);
+
+                    await FaceApiService.UpdatePersonAsync(personGroupId, currentPerson);
                 }
             }
 
@@ -178,7 +184,7 @@ namespace MirrorManager.UWP
                 {
                     personId = id,
                     name = viewModel.UserName,
-                    userData = JsonConvert.SerializeObject(userData).EncodeBase64(Encoding.UTF8)
+                    userData = JsonConvert.SerializeObject(userData).EncodeBase64()
                 };
             }
 
@@ -469,7 +475,7 @@ namespace MirrorManager.UWP
             }
             
             var res = (from p in people
-                      where JsonConvert.DeserializeObject<UserData>(p.userData.DecodeBase64(Encoding.UTF8)).UserId == userId
+                      where JsonConvert.DeserializeObject<UserData>(p.userData.DecodeBase64()).UserId == userId
                       select p).FirstOrDefault();
 
             if (res == null)
@@ -481,15 +487,6 @@ namespace MirrorManager.UWP
                 currentPerson = res;
                 return true;
             }
-        }
-
-        private async void UpdateOxford_Click(object sender, RoutedEventArgs e)
-        {
-            Debug.WriteLine("Updating...");
-
-            var res = await FaceApiService.UpdatePersonAsync(personGroupId, currentPerson.personId, "Michal Martin");
-
-            Debug.WriteLine(res);
         }
 
         private async void IdentifyCheck_Click(object sender, RoutedEventArgs e)
