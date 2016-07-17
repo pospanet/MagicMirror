@@ -103,7 +103,7 @@ namespace MirrorManager.UWP
                 }
                 else
                 {
-                    viewModel.OxfordStatus = "Welcome back. Do you want to recalibrate?";
+                    viewModel.OxfordStatus = "Welcome back!";
 
                     var ud = FaceApiService.DeserializeUserData(currentPerson.userData);
                     ud.AccessToken = token;
