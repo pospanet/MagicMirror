@@ -12,10 +12,11 @@ using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 using Mirror.Common.Utils;
 using Mirror.Common.DTO;
+using MirrorManager.UWP.Helpers;
 
-namespace MirrorManager.UWP.Helpers
+namespace MirrorManager.UWP.Services
 {
-    public class FaceApiHelper
+    public class FaceApiService
     {
         static string faceApiKey = App.Current.Resources["FaceApiKey"].ToString();
 

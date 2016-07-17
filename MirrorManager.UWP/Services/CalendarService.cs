@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MirrorManager.UWP.Helpers
+namespace MirrorManager.UWP.Services
 {
-    class CalendarHelper
+    public class CalendarService
     {
     }
 }

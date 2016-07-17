@@ -1,6 +1,7 @@
 ﻿using Mirror.Common.DTO;
 using Mirror.Common.Utils;
 using MirrorManager.UWP.Helpers;
+using MirrorManager.UWP.Services;
 using MirrorManager.UWP.ViewModels;
 using Newtonsoft.Json;
 using System;
@@ -169,7 +170,7 @@ namespace MirrorManager.UWP
                 Debug.WriteLine("Creating person in group.");
 
                 var userData = new UserData(App.Settings.Values["userID"].ToString(), App.Settings.Values["Token"].ToString());
-                var id = await FaceApiHelper.CreatePersonInGroupAsync(personGroupId, viewModel.UserName, userData);
+                var id = await FaceApiService.CreatePersonInGroupAsync(personGroupId, viewModel.UserName, userData);
 
                 Debug.WriteLine("Person created with ID: " + id);
 
@@ -189,7 +190,7 @@ namespace MirrorManager.UWP
                 await image.SetSourceAsync(stream);
                 photo.Source = image;
 
-                var faceId = await FaceApiHelper.AddPersonFaceAsync(personGroupId, currentPerson.personId, stream);
+                var faceId = await FaceApiService.AddPersonFaceAsync(personGroupId, currentPerson.personId, stream);
                 Debug.WriteLine($"Face added to person {currentPerson.personId} with ID: {faceId}");
 
                 stream.Dispose();
@@ -460,7 +461,7 @@ namespace MirrorManager.UWP
         private async Task<bool> checkUserRegistrationAsync()
         {
             var userId = App.Settings.Values["userID"].ToString();
-            var people = await FaceApiHelper.GetPeopleInGroupAsync(personGroupId);
+            var people = await FaceApiService.GetPeopleInGroupAsync(personGroupId);
 
             if (people.Count == 0)
             {
@@ -486,7 +487,7 @@ namespace MirrorManager.UWP
         {
             Debug.WriteLine("Updating...");
 
-            var res = await FaceApiHelper.UpdatePersonAsync(personGroupId, currentPerson.personId, "Michal Martin");
+            var res = await FaceApiService.UpdatePersonAsync(personGroupId, currentPerson.personId, "Michal Martin");
 
             Debug.WriteLine(res);
         }
@@ -503,7 +504,7 @@ namespace MirrorManager.UWP
                 await image.SetSourceAsync(stream);
                 photo.Source = image;
 
-                var res = await FaceApiHelper.IdentifyPersonAsync(personGroupId, stream);
+                var res = await FaceApiService.IdentifyPersonAsync(personGroupId, stream);
                 viewModel.FaceRecognized = (currentPerson.personId == res);
                 Debug.WriteLine($"Logged in person: {currentPerson.personId}, identified person: {res}");
 

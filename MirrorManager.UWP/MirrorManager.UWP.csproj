@@ -96,8 +96,8 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helpers\AuthenticationHelper.cs" />
-    <Compile Include="Helpers\CalendarHelper.cs" />
-    <Compile Include="Helpers\FaceApiHelper.cs" />
+    <Compile Include="Services\CalendarService.cs" />
+    <Compile Include="Services\FaceApiService.cs" />
     <Compile Include="Helpers\OxfordError.cs" />
     <Compile Include="Helpers\OxfordException.cs" />
     <Compile Include="Helpers\OxfordIdentifyRequest.cs" />
