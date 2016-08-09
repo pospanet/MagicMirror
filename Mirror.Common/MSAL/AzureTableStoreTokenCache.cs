@@ -13,19 +13,38 @@ namespace Mirror.Common.MSAL
     {
         private const string PartitionKey = "UserTokens";
         private const string UserTokenTableName = "UserTokens";
-        private readonly ITokenCacheConfig _tokenCacheConfig;
-        private readonly string _userId;
         private readonly CloudTable _tokenCacheTable;
+        private readonly string _userId;
         private TokenCacheEntity _tokenCacheEntity;
 
-        private AzureTableStoreTokenCache(ITokenCacheConfig tokenCacheConfig, string userId, CloudTable tokenCacheTable)
+        private AzureTableStoreTokenCache(string userId, CloudTable tokenCacheTable)
         {
-            _tokenCacheConfig = tokenCacheConfig;
             BeforeAccess = BeforeAccessNotification;
             AfterAccess = AfterAccessNotification;
             _userId = userId;
             _tokenCacheTable = tokenCacheTable;
         }
+
+        public static AzureTableStoreTokenCache GetTokenCache(ITokenCacheConfig tokenCacheConfig,
+            string userId)
+        {
+            Task<CloudTable> tokenCacheTableTask = GetTokenCacheTableAsync(tokenCacheConfig);
+            if (!tokenCacheTableTask.IsCompleted)
+            {
+                tokenCacheTableTask.Wait();
+            }
+            AzureTableStoreTokenCache tokenCache = new AzureTableStoreTokenCache(userId, tokenCacheTableTask.Result);
+            return tokenCache;
+        }
+
+        public static async Task<AzureTableStoreTokenCache> GetTokenCacheAsync(ITokenCacheConfig tokenCacheConfig,
+            string userId)
+        {
+            CloudTable tokenCacheTable = await GetTokenCacheTableAsync(tokenCacheConfig);
+            AzureTableStoreTokenCache tokenCache = new AzureTableStoreTokenCache(userId, tokenCacheTable);
+            return tokenCache;
+        }
+
 
         private void AfterAccessNotification(TokenCacheNotificationArgs args)
         {
@@ -33,22 +52,27 @@ namespace Mirror.Common.MSAL
             tokenCacheEntity.SetData(Serialize());
             TableOperation tokenCacheTableOperation = TableOperation.InsertOrReplace(tokenCacheEntity);
             Task<TableResult> tableOperationTask = _tokenCacheTable.ExecuteAsync(tokenCacheTableOperation);
-            tableOperationTask.RunSynchronously();
+            if (!tableOperationTask.IsCompleted)
+            {
+                tableOperationTask.Wait();
+            }
         }
 
         private void BeforeAccessNotification(TokenCacheNotificationArgs args)
         {
             TableOperation tokenCacheTableOperation = TableOperation.Retrieve<TokenCacheEntity>(PartitionKey, _userId);
             Task<TableResult> tableOperationTask = _tokenCacheTable.ExecuteAsync(tokenCacheTableOperation);
-            tableOperationTask.RunSynchronously();
-
+            if (!tableOperationTask.IsCompleted)
+            {
+                tableOperationTask.Wait();
+            }
             TableResult tokenRecords = tableOperationTask.Result;
             if (tokenRecords.Result == null)
             {
                 throw new ArgumentOutOfRangeException(nameof(_userId),
                     string.Concat("No data found for User ID: ", _userId));
             }
-            TokenCacheEntity tokenCacheEntity = (TokenCacheEntity)tokenRecords.Result;
+            TokenCacheEntity tokenCacheEntity = (TokenCacheEntity) tokenRecords.Result;
             Deserialize(tokenCacheEntity.GetData());
             _tokenCacheEntity = tokenCacheEntity;
         }
@@ -59,15 +83,10 @@ namespace Mirror.Common.MSAL
             BeforeAccessNotification(null);
             TableOperation tokenCacheTableOperation = TableOperation.Delete(_tokenCacheEntity);
             Task<TableResult> tableOperationTask = _tokenCacheTable.ExecuteAsync(tokenCacheTableOperation);
-            tableOperationTask.RunSynchronously();
-        }
-
-        public static async Task<AzureTableStoreTokenCache> GetTokenCacheAsync(ITokenCacheConfig tokenCacheConfig,
-            string userId)
-        {
-            CloudTable tokenCacheTable = await GetTokenCacheTableAsync(tokenCacheConfig);
-            AzureTableStoreTokenCache tokenCache = new AzureTableStoreTokenCache(tokenCacheConfig, userId, tokenCacheTable);
-            return tokenCache;
+            if (!tableOperationTask.IsCompleted)
+            {
+                tableOperationTask.Wait();
+            }
         }
 
         private static async Task<CloudTable> GetTokenCacheTableAsync(ITokenCacheConfig tokenCacheConfig)
@@ -82,7 +101,7 @@ namespace Mirror.Common.MSAL
 
     internal class TokenCacheEntity : TableEntity
     {
-        public TokenCacheEntity(string partition, string userName):this()
+        public TokenCacheEntity(string partition, string userName) : this()
         {
             PartitionKey = partition;
             RowKey = userName;
