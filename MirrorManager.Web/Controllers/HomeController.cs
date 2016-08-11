@@ -8,9 +8,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.Diagnostics;
-using Microsoft.ProjectOxford.Face;
+//using Microsoft.ProjectOxford.Face;
 using System.IO;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Microsoft.ProjectOxford.Face;
 
 namespace MirrorManager.Web.Controllers
 {
@@ -26,21 +28,18 @@ namespace MirrorManager.Web.Controllers
 
         public IActionResult Index()
         {
-
-            //var a = new CalendarEvent();
-
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Upload([FromBody] CustReq req)
+        public async Task<IActionResult> Upload([FromBody]CustReq req)
         {
             string COGNITIVE_KEY = _configuration["COGNITIVE_KEY"];
             var Face = new FaceServiceClient(COGNITIVE_KEY);
 
             byte[] bytes = Convert.FromBase64String(req.image);
             MemoryStream ms = new MemoryStream(bytes);
-
+            
             var returnedFace = await Face.DetectAsync(ms);
 
             return Json(returnedFace);

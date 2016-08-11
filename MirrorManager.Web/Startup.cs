@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 //using MirrorManager.Web.MSAL;
 using Microsoft.AspNetCore.Http;
+using MirrorManager.Web.MSAL;
+using MirrorManager.Web.MSAL.Configuration;
 
 namespace MirrorManager.Web
 {
@@ -45,10 +47,9 @@ namespace MirrorManager.Web
 
             services.AddAuthentication(
                 SharedOptions => SharedOptions.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme);
-
-            services.AddOptions();
-
-            services.Configure<IConfigurationRoot>(Configuration);
+            
+            services.AddSingleton(Configuration);
+            services.AddTransient<ITokenCacheConfig, TokenCacheConfig>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -81,29 +82,30 @@ namespace MirrorManager.Web
                 Authority = Authority,
                 CallbackPath = Configuration["Authentication:AzureAd:CallbackPath"],
                 ResponseType = OpenIdConnectResponseType.CodeIdToken,
-                //Events = new OpenIdConnectEvents()
-                //{
-                //    OnAuthorizationCodeReceived = async context =>
-                //    {
-                //        AzureTableStoreTokenCache tokenCache = await AzureTableStoreTokenCache.GetTokenCacheAsync(new MSAL.Configuration.TokenCacheConfig(), "test");
+                Events = new OpenIdConnectEvents()
+                {
+                    OnAuthorizationCodeReceived = async context =>
+                    {
+                        TokenCacheConfig TokenCacheConfig = new TokenCacheConfig(Configuration);
+                        AzureTableStoreTokenCache tokenCache = await AzureTableStoreTokenCache.GetTokenCacheAsync(TokenCacheConfig, "test");
 
-                //        // given the authorization code
-                //        var authorizationCode = context.ProtocolMessage.Code;
-                //        var request = context.HttpContext.Request;
-                //        var redirectUri = new Uri(context.Request.Scheme + "://" + context.Request.Host + context.Request.PathBase + "/signin-oidc");
+                        // given the authorization code
+                        var authorizationCode = context.ProtocolMessage.Code;
+                        var request = context.HttpContext.Request;
+                        var redirectUri = new Uri(context.Request.Scheme + "://" + context.Request.Host + context.Request.PathBase + "/signin-oidc");
 
-                //        // get and verify the access token and refresh token
-                //        var credential = new ClientCredential(Configuration["Authentication:AzureAd:ClientId"], Configuration["Authentication:AzureAd:ClientSecret"]);
-                //        var authContext = new AuthenticationContext(Authority, tokenCache);
-                //        var result = await authContext.AcquireTokenByAuthorizationCodeAsync(authorizationCode, redirectUri, credential, "https://graph.windows.net");
+                        // get and verify the access token and refresh token
+                        var credential = new ClientCredential(Configuration["Authentication:AzureAd:ClientId"], Configuration["Authentication:AzureAd:ClientSecret"]);
+                        var authContext = new AuthenticationContext(Authority, tokenCache);
+                        var result = await authContext.AcquireTokenByAuthorizationCodeAsync(authorizationCode, redirectUri, credential, "https://graph.windows.net");
 
-                //        // serialize the per-user TokenCache
-                //        var tokenBlob = tokenCache.Serialize();
+                        // serialize the per-user TokenCache
+                        var tokenBlob = tokenCache.Serialize();
 
-                //        // and store it in the authentication properties so that the Controller can access it
-                //        context.HandleCodeRedemption(result.AccessToken, result.IdToken);
-                //    }
-                //}
+                        // and store it in the authentication properties so that the Controller can access it
+                        context.HandleCodeRedemption(result.AccessToken, result.IdToken);
+                    }
+                }
             });
 
             app.UseMvc(routes =>

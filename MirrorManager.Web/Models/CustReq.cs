@@ -4,7 +4,7 @@ namespace MirrorManager.Web.Controllers
 {
     public class CustReq
     {
-        //[DataMember]
         public string image { get; set; }
+        public string test { get; set; }
     }
 }

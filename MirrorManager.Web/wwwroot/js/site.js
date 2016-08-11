@@ -49,7 +49,7 @@ window.addEventListener("DOMContentLoaded", function () {
         $.ajax({
             url: "Home/Upload",
             type: "POST",
-            data: JSON.stringify({ image: img }),
+            data: JSON.stringify({ image: img, test: "test" }),
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: function (data) {
