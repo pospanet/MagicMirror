@@ -87,7 +87,8 @@ namespace MirrorManager.Web
                     OnAuthorizationCodeReceived = async context =>
                     {
                         TokenCacheConfig TokenCacheConfig = new TokenCacheConfig(Configuration);
-                        AzureTableStoreTokenCache tokenCache = await AzureTableStoreTokenCache.GetTokenCacheAsync(TokenCacheConfig, "test");
+                        string userId = context.JwtSecurityToken.Claims.FirstOrDefault(c => c.Type.Equals("oid")).Value;
+                        AzureTableStoreTokenCache tokenCache = await AzureTableStoreTokenCache.GetTokenCacheAsync(TokenCacheConfig, userId);
 
                         // given the authorization code
                         var authorizationCode = context.ProtocolMessage.Code;

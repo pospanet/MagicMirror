@@ -1,0 +1,19 @@
+{
+  "title": "Mirror.Core",
+  "copyright": "Pospa.NET",
+  "description": "Magic Mirror core lib for .NET core",
+  "version": "0.9.0-*",
+
+  "dependencies": {
+    "Microsoft.IdentityModel.Clients.ActiveDirectory": "3.13.1",
+    "NETStandard.Library": "1.6.0",
+    "System.Linq": "4.1.0",
+    "WindowsAzure.Storage": "4.3.2-preview"
+  },
+
+  "frameworks": {
+    "netstandard1.6": {
+      "imports": "dnxcore50"
+    }
+  }
+}
