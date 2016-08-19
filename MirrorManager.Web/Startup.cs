@@ -12,7 +12,6 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
-//using MirrorManager.Web.MSAL;
 using Microsoft.AspNetCore.Http;
 using MirrorManager.Web.MSAL;
 using MirrorManager.Web.MSAL.Configuration;
@@ -98,7 +97,7 @@ namespace MirrorManager.Web
                         // get and verify the access token and refresh token
                         var credential = new ClientCredential(Configuration["Authentication:AzureAd:ClientId"], Configuration["Authentication:AzureAd:ClientSecret"]);
                         var authContext = new AuthenticationContext(Authority, tokenCache);
-                        var result = await authContext.AcquireTokenByAuthorizationCodeAsync(authorizationCode, redirectUri, credential, "https://graph.windows.net");
+                        var result = await authContext.AcquireTokenByAuthorizationCodeAsync(authorizationCode, redirectUri, credential, "https://graph.microsoft.com");
 
                         // serialize the per-user TokenCache
                         var tokenBlob = tokenCache.Serialize();

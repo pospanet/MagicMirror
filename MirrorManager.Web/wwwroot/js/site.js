@@ -1,36 +1,19 @@
 ﻿// Write your Javascript code.
-function hasGetUserMedia() {
-    // Note: Opera is unprefixed.
-    return !!(navigator.getUserMedia || navigator.webkitGetUserMedia ||
-    navigator.mozGetUserMedia || navigator.msGetUserMedia);
-}
-
-if (hasGetUserMedia()) {
-    // Good to go!
-} else {
-    alert('getUserMedia() is not supported in your browser');
-}
 
 window.addEventListener("DOMContentLoaded", function () {
     // Grab elements, create settings, etc.
     var canvas = document.getElementById("canvas"),
         context = canvas.getContext("2d"),
         video = document.getElementById("video"),
-        videoObj = { "video": true },
-        errBack = function (error) {
-            console.log("Video capture error: ", error.code);
-        };
+        videoObj = { video: true };
 
-    if (navigator.getUserMedia) { // Standard
-        navigator.getUserMedia(videoObj, function (stream) {
-            video.src = stream;
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia(videoObj).then(function (stream) {
+            video.src = window.URL.createObjectURL(stream);
             video.play();
-        }, errBack);
-    } else if (navigator.webkitGetUserMedia) { // WebKit-prefixed
-        navigator.webkitGetUserMedia(videoObj, function (stream) {
-            video.src = window.webkitURL.createObjectURL(stream);
-            video.play();
-        }, errBack);
+        });
+    } else {
+        alert('getUserMedia() is not supported in your browser');
     }
 
     // Trigger photo take
@@ -39,15 +22,15 @@ window.addEventListener("DOMContentLoaded", function () {
     });
 
     document.getElementById("upload").addEventListener("click", function () {
-        UploadToCloud();
+        checkFace();
     });
 
-    function UploadToCloud() {
+    function checkFace() {
         $("#upload").attr('disabled', 'disabled');
         $("#upload").attr("value", "Uploading...");
         var img = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
         $.ajax({
-            url: "Home/Upload",
+            url: "ajax/checkFace",
             type: "POST",
             data: JSON.stringify({ image: img, test: "test" }),
             contentType: "application/json; charset=utf-8",

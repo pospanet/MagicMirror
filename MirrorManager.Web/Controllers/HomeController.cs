@@ -20,10 +20,12 @@ namespace MirrorManager.Web.Controllers
     public class HomeController : Controller
     {
         private readonly IConfigurationRoot _configuration;
+        private FaceServiceClient _faceClient;
 
         public HomeController(IConfigurationRoot configuration)
         {
             _configuration = configuration;
+            _faceClient = new FaceServiceClient(_configuration["COGNITIVE_KEY"]);
         }
 
         public IActionResult Index()
@@ -31,25 +33,34 @@ namespace MirrorManager.Web.Controllers
             return View();
         }
 
+        [Route("ajax/checkFace")]
         [HttpPost]
-        public async Task<IActionResult> Upload([FromBody]CustReq req)
+        public async Task<IActionResult> checkFace([FromBody]CustReq req)
         {
-            string COGNITIVE_KEY = _configuration["COGNITIVE_KEY"];
-            var Face = new FaceServiceClient(COGNITIVE_KEY);
-
             byte[] bytes = Convert.FromBase64String(req.image);
             MemoryStream ms = new MemoryStream(bytes);
             
-            var returnedFace = await Face.DetectAsync(ms);
+            var returnedFace = await _faceClient.DetectAsync(ms);
 
             return Json(returnedFace);
         }
 
-        //TODO: Return number of faces in picture (used for validation of camera button)
+        [Route("ajax/linkFace")]
+        [HttpPost]
+        public async Task<IActionResult> linkFace([FromBody]CustReq req)
+        {
+            //TODO: Upload picture and add it to the identity
+            return null;
+        }
 
-        //TODO: Upload picture and add it to the identity
+        [Route("ajax/removeFace")]
+        [HttpPost]
+        public async Task<IActionResult> removeFace([FromBody]CustReq req)
+        {
+            //TODO: Discard identity link
+            return null;
+        }
 
-        //TODO: Discard identity link
 
         public async Task<IActionResult> About()
         {

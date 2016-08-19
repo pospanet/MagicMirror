@@ -49,7 +49,7 @@ namespace MirrorManager.Web.MSAL
         private void AfterAccessNotification(TokenCacheNotificationArgs args)
         {
             TokenCacheEntity tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId);
-            tokenCacheEntity.SetData(Serialize());
+            tokenCacheEntity.Token = Serialize();
             TableOperation tokenCacheTableOperation = TableOperation.InsertOrReplace(tokenCacheEntity);
             Task<TableResult> tableOperationTask = _tokenCacheTable.ExecuteAsync(tokenCacheTableOperation);
             if (!tableOperationTask.IsCompleted)
@@ -69,12 +69,14 @@ namespace MirrorManager.Web.MSAL
             TableResult tokenRecords = tableOperationTask.Result;
             if (tokenRecords.Result == null)
             {
-                throw new ArgumentOutOfRangeException(nameof(_userId),
-                    string.Concat("No data found for User ID: ", _userId));
+                _tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId);
             }
-            TokenCacheEntity tokenCacheEntity = (TokenCacheEntity) tokenRecords.Result;
-            Deserialize(tokenCacheEntity.GetData());
-            _tokenCacheEntity = tokenCacheEntity;
+            else
+            {
+                TokenCacheEntity tokenCacheEntity = (TokenCacheEntity)tokenRecords.Result;
+                Deserialize(tokenCacheEntity.Token);
+                _tokenCacheEntity = tokenCacheEntity;
+            }
         }
 
         public override void Clear()
@@ -101,6 +103,7 @@ namespace MirrorManager.Web.MSAL
 
     internal class TokenCacheEntity : TableEntity
     {
+        public string personId { get; set; }
         public TokenCacheEntity(string partition, string userName) : this()
         {
             PartitionKey = partition;
@@ -109,53 +112,10 @@ namespace MirrorManager.Web.MSAL
 
         public TokenCacheEntity()
         {
-            InitData();
+            Token = new byte[0];
+            personId = null;
         }
 
-        public byte[] DataChunk1 { get; set; }
-        public byte[] DataChunk2 { get; set; }
-        public byte[] DataChunk3 { get; set; }
-        public byte[] DataChunk4 { get; set; }
-        public byte[] DataChunk5 { get; set; }
-        public byte[] DataChunk6 { get; set; }
-        public byte[] DataChunk7 { get; set; }
-        public byte[] DataChunk8 { get; set; }
-        public byte[] DataChunk9 { get; set; }
-
-        public byte[] GetData()
-        {
-            List<byte[]> tokenCacheDataList = new List<byte[]>
-            {
-                DataChunk1,
-                DataChunk2,
-                DataChunk3,
-                DataChunk4,
-                DataChunk5,
-                DataChunk6,
-                DataChunk7,
-                DataChunk8,
-                DataChunk9
-            };
-            return tokenCacheDataList.SelectMany(chunk => chunk).ToArray();
-        }
-
-        public void SetData(byte[] data)
-        {
-            InitData();
-            DataChunk1 = data;
-        }
-
-        private void InitData()
-        {
-            DataChunk1 = new byte[0];
-            DataChunk2 = new byte[0];
-            DataChunk3 = new byte[0];
-            DataChunk4 = new byte[0];
-            DataChunk5 = new byte[0];
-            DataChunk6 = new byte[0];
-            DataChunk7 = new byte[0];
-            DataChunk8 = new byte[0];
-            DataChunk9 = new byte[0];
-        }
+        public byte[] Token { get; set; }
     }
 }

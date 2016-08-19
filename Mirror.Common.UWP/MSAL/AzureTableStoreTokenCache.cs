@@ -69,12 +69,14 @@ namespace Pospa.Mirror.Common.MSAL
             TableResult tokenRecords = tableOperationTask.Result;
             if (tokenRecords.Result == null)
             {
-                throw new ArgumentOutOfRangeException(nameof(_userId),
-                    string.Concat("No data found for User ID: ", _userId));
+                _tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId);
             }
-            TokenCacheEntity tokenCacheEntity = (TokenCacheEntity) tokenRecords.Result;
-            Deserialize(tokenCacheEntity.GetData());
-            _tokenCacheEntity = tokenCacheEntity;
+            else
+            {
+                TokenCacheEntity tokenCacheEntity = (TokenCacheEntity)tokenRecords.Result;
+                Deserialize(tokenCacheEntity.GetData());
+                _tokenCacheEntity = tokenCacheEntity;
+            }
         }
 
         public override void Clear()
