@@ -15,6 +15,7 @@ using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.AspNetCore.Http;
 using MirrorManager.Web.MSAL;
 using MirrorManager.Web.MSAL.Configuration;
+using MirrorManager.Web.Models;
 
 namespace MirrorManager.Web
 {
@@ -49,6 +50,7 @@ namespace MirrorManager.Web
             
             services.AddSingleton(Configuration);
             services.AddTransient<ITokenCacheConfig, TokenCacheConfig>();
+            services.AddSingleton(new UserFunctions(Configuration));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

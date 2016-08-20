@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 
 namespace MirrorManager.Web.Models
 {
-    public class User
+    public class UserFunctions
     {
         private readonly CloudTable _tokenCache = null;
         private const string PartitionKey = "UserTokens";
         private const string UserTokenTableName = "UserTokens";
-        public User(IConfiguration configuration)
+        public UserFunctions(IConfiguration configuration)
         {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(configuration["TOKEN_STORAGE"]);
             CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
@@ -22,7 +22,7 @@ namespace MirrorManager.Web.Models
             tokenCacheTable.CreateIfNotExistsAsync().Wait();
             _tokenCache = tokenCacheTable;
         }
-        public async Task<string> getUserPersonId(string userId)
+        public async Task<string> getPersonIdAsync(string userId)
         {
             TableOperation retrieveOperation = TableOperation.Retrieve<TokenCacheEntity>(PartitionKey, userId);
             TableResult retrievedResult = await _tokenCache.ExecuteAsync(retrieveOperation);
@@ -30,7 +30,7 @@ namespace MirrorManager.Web.Models
             return ((TokenCacheEntity)retrievedResult.Result).personId;
         }
 
-        public async Task setUserPersonId(string userId, string faceId)
+        public async Task setPersonIdAsync(string userId, string faceId)
         {
             TableOperation retrieveOperation = TableOperation.Retrieve<TokenCacheEntity>(PartitionKey, userId);
             TableResult retrievedResult = await _tokenCache.ExecuteAsync(retrieveOperation);

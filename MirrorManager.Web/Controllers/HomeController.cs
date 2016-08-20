@@ -13,6 +13,8 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.ProjectOxford.Face;
+using MirrorManager.Web.Models;
+using System.Security.Claims;
 
 namespace MirrorManager.Web.Controllers
 {
@@ -21,15 +23,20 @@ namespace MirrorManager.Web.Controllers
     {
         private readonly IConfigurationRoot _configuration;
         private FaceServiceClient _faceClient;
+        private UserFunctions _userFunctions;
 
-        public HomeController(IConfigurationRoot configuration)
+        public HomeController(IConfigurationRoot configuration, UserFunctions userFunctions)
         {
             _configuration = configuration;
             _faceClient = new FaceServiceClient(_configuration["COGNITIVE_KEY"]);
+            _userFunctions = userFunctions;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            Claim oid = User.Claims.FirstOrDefault(x => x.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier");
+            var personId = await _userFunctions.getPersonIdAsync(oid.Value);
+
             return View();
         }
 
