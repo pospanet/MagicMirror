@@ -56,16 +56,44 @@ namespace MirrorManager.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> linkFace([FromBody]CustReq req)
         {
-            //TODO: Upload picture and add it to the identity
-            return null;
+            Claim oid = User.Claims.FirstOrDefault(x => x.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier");
+            var personId = await _userFunctions.getPersonIdAsync(oid.Value);
+            if(personId == null)
+            {
+                var person = await _faceClient.CreatePersonAsync(_configuration["personGroupId"], oid.Value);
+                await _userFunctions.setPersonIdAsync(oid.Value, person.PersonId.ToString());
+                personId = person.PersonId.ToString();
+            }
+
+            byte[] bytes = Convert.FromBase64String(req.image);
+            MemoryStream ms = new MemoryStream(bytes);
+
+            try
+            {
+                var returnedFace = await _faceClient.AddPersonFaceAsync(_configuration["personGroupId"], Guid.Parse(personId), ms);
+                return Json(returnedFace);
+            }
+            catch (FaceAPIException e)
+            {
+                return Json(new { error = e.ErrorMessage });
+            }
         }
 
-        [Route("ajax/removeFace")]
+        [Route("ajax/deleteIdentity")]
         [HttpPost]
-        public async Task<IActionResult> removeFace([FromBody]CustReq req)
+        public async Task<IActionResult> deleteIdentity([FromBody]CustReq req)
         {
-            //TODO: Discard identity link
-            return null;
+            Claim oid = User.Claims.FirstOrDefault(x => x.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier");
+            var personId = await _userFunctions.getPersonIdAsync(oid.Value);
+            if(personId == null)
+            {
+                return Json(new { message = "No identity linked to your account..." });
+            }
+
+            await _faceClient.DeletePersonAsync(_configuration["personGroupId"], Guid.Parse(personId));
+            await _userFunctions.setPersonIdAsync(oid.Value, null);
+
+            return Json(new { message = "Identity deleted..." });
         }
 
 

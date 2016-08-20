@@ -16,18 +16,23 @@ window.addEventListener("DOMContentLoaded", function () {
         alert('getUserMedia() is not supported in your browser');
     }
 
-    // Trigger photo take
-    document.getElementById("snap").addEventListener("click", function () {
+    $("#snap").on("click", function () {
         context.drawImage(video, 0, 0, 640, 480);
     });
 
-    document.getElementById("upload").addEventListener("click", function () {
+    $("#checkFace").on("click", function () {
         checkFace();
+    });
+    $("#linkFace").on("click", function () {
+        linkFace();
+    });
+    $("#deleteIdentity").on("click", function () {
+        deleteIdentity();
     });
 
     function checkFace() {
-        $("#upload").attr('disabled', 'disabled');
-        $("#upload").attr("value", "Uploading...");
+        $("#checkFace").attr('disabled', 'disabled');
+        $("#checkFace").attr("value", "Uploading...");
         var img = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
         $.ajax({
             url: "ajax/checkFace",
@@ -37,13 +42,62 @@ window.addEventListener("DOMContentLoaded", function () {
             dataType: "json",
             success: function (data) {
                 alert(JSON.stringify(data));
-                $("#upload").removeAttr('disabled');
-                $("#upload").attr("value", "Upload");
+                $("#checkFace").removeAttr('disabled');
+                $("#checkFace").attr("value", "Check face");
             },
             error: function () {
                 alert("There was some error while uploading Image");
-                $("#upload").removeAttr('disabled');
-                $("#upload").attr("value", "Upload");
+                $("#checkFace").removeAttr('disabled');
+                $("#checkFace").attr("value", "Check face");
+            }
+        });
+    }
+    function linkFace() {
+        $("#linkFace").attr('disabled', 'disabled');
+        $("#linkFace").attr("value", "Uploading...");
+        var img = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+        $.ajax({
+            url: "ajax/linkFace",
+            type: "POST",
+            data: JSON.stringify({ image: img, test: "test" }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                if (data.error) {
+                    alert(data.error);
+                }
+                else {
+                    alert(JSON.stringify(data));
+                }
+                $("#linkFace").removeAttr('disabled');
+                $("#linkFace").attr("value", "Link face");
+            },
+            error: function () {
+                alert("There was some error while uploading image");
+                $("#linkFace").removeAttr('disabled');
+                $("#linkFace").attr("value", "Link face");
+            }
+        });
+    }
+    function deleteIdentity() {
+        $("#linkFace").attr('disabled', 'disabled');
+        $("#linkFace").attr("value", "Deleting...");
+        var img = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+        $.ajax({
+            url: "ajax/deleteIdentity",
+            type: "POST",
+            data: JSON.stringify({ image: img, test: "test" }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                alert(JSON.stringify(data));
+                $("#linkFace").removeAttr('disabled');
+                $("#linkFace").attr("value", "Delete identity");
+            },
+            error: function () {
+                alert("There was some error while deleting identity");
+                $("#linkFace").removeAttr('disabled');
+                $("#linkFace").attr("value", "Delete identity");
             }
         });
     }
