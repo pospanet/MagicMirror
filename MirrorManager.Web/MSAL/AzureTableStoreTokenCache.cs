@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -48,8 +45,7 @@ namespace MirrorManager.Web.MSAL
 
         private void AfterAccessNotification(TokenCacheNotificationArgs args)
         {
-            TokenCacheEntity tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId);
-            tokenCacheEntity.Token = Serialize();
+            TokenCacheEntity tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId) {Token = Serialize()};
             TableOperation tokenCacheTableOperation = TableOperation.InsertOrReplace(tokenCacheEntity);
             Task<TableResult> tableOperationTask = _tokenCacheTable.ExecuteAsync(tokenCacheTableOperation);
             if (!tableOperationTask.IsCompleted)
@@ -73,7 +69,7 @@ namespace MirrorManager.Web.MSAL
             }
             else
             {
-                TokenCacheEntity tokenCacheEntity = (TokenCacheEntity)tokenRecords.Result;
+                TokenCacheEntity tokenCacheEntity = (TokenCacheEntity) tokenRecords.Result;
                 Deserialize(tokenCacheEntity.Token);
                 _tokenCacheEntity = tokenCacheEntity;
             }
@@ -103,7 +99,6 @@ namespace MirrorManager.Web.MSAL
 
     internal class TokenCacheEntity : TableEntity
     {
-        public string personId { get; set; }
         public TokenCacheEntity(string partition, string userName) : this()
         {
             PartitionKey = partition;
@@ -113,8 +108,10 @@ namespace MirrorManager.Web.MSAL
         public TokenCacheEntity()
         {
             Token = new byte[0];
-            personId = null;
+            PersonId = null;
         }
+
+        public string PersonId { get; set; }
 
         public byte[] Token { get; set; }
     }

@@ -27,7 +27,7 @@ namespace MirrorManager.Web.Models
             TableOperation retrieveOperation = TableOperation.Retrieve<TokenCacheEntity>(PartitionKey, userId);
             TableResult retrievedResult = await _tokenCache.ExecuteAsync(retrieveOperation);
 
-            return ((TokenCacheEntity)retrievedResult.Result).personId;
+            return ((TokenCacheEntity)retrievedResult.Result).PersonId;
         }
 
         public async Task setPersonIdAsync(string userId, string personId)
@@ -35,7 +35,7 @@ namespace MirrorManager.Web.Models
             TableOperation retrieveOperation = TableOperation.Retrieve<TokenCacheEntity>(PartitionKey, userId);
             TableResult retrievedResult = await _tokenCache.ExecuteAsync(retrieveOperation);
             TokenCacheEntity entity = (TokenCacheEntity)retrievedResult.Result;
-            entity.personId = personId;
+            entity.PersonId = personId;
 
             TableOperation insertOrReplaceOperation = TableOperation.InsertOrReplace(entity);
             await _tokenCache.ExecuteAsync(insertOrReplaceOperation);

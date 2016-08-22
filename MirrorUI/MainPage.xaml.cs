@@ -81,6 +81,11 @@ namespace Pospa.NET.MagicMirror.UI
             }
         }
 
+        private async Task ShowPersonalizedInfoPanel(Person person)
+        {
+            throw new NotImplementedException();
+        }
+
         private static async Task<Stream> GetPhotoStreamAsync(MediaCapture mediaCapture)
         {
             InMemoryRandomAccessStream photoStream = new InMemoryRandomAccessStream();

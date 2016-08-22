@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -48,8 +45,7 @@ namespace Pospa.Mirror.Common.MSAL
 
         private void AfterAccessNotification(TokenCacheNotificationArgs args)
         {
-            TokenCacheEntity tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId);
-            tokenCacheEntity.SetData(Serialize());
+            TokenCacheEntity tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId) {Token = Serialize()};
             TableOperation tokenCacheTableOperation = TableOperation.InsertOrReplace(tokenCacheEntity);
             Task<TableResult> tableOperationTask = _tokenCacheTable.ExecuteAsync(tokenCacheTableOperation);
             if (!tableOperationTask.IsCompleted)
@@ -73,9 +69,8 @@ namespace Pospa.Mirror.Common.MSAL
             }
             else
             {
-                TokenCacheEntity tokenCacheEntity = (TokenCacheEntity)tokenRecords.Result;
-                Deserialize(tokenCacheEntity.GetData());
-                _tokenCacheEntity = tokenCacheEntity;
+                TokenCacheEntity tokenCacheEntity = (TokenCacheEntity) tokenRecords.Result;
+                Deserialize(tokenCacheEntity.Token);
             }
         }
 
@@ -111,53 +106,11 @@ namespace Pospa.Mirror.Common.MSAL
 
         public TokenCacheEntity()
         {
-            InitData();
+            PersonId = null;
+            Token = new byte[0];
         }
 
-        public byte[] DataChunk1 { get; set; }
-        public byte[] DataChunk2 { get; set; }
-        public byte[] DataChunk3 { get; set; }
-        public byte[] DataChunk4 { get; set; }
-        public byte[] DataChunk5 { get; set; }
-        public byte[] DataChunk6 { get; set; }
-        public byte[] DataChunk7 { get; set; }
-        public byte[] DataChunk8 { get; set; }
-        public byte[] DataChunk9 { get; set; }
-
-        public byte[] GetData()
-        {
-            List<byte[]> tokenCacheDataList = new List<byte[]>
-            {
-                DataChunk1,
-                DataChunk2,
-                DataChunk3,
-                DataChunk4,
-                DataChunk5,
-                DataChunk6,
-                DataChunk7,
-                DataChunk8,
-                DataChunk9
-            };
-            return tokenCacheDataList.SelectMany(chunk => chunk).ToArray();
-        }
-
-        public void SetData(byte[] data)
-        {
-            InitData();
-            DataChunk1 = data;
-        }
-
-        private void InitData()
-        {
-            DataChunk1 = new byte[0];
-            DataChunk2 = new byte[0];
-            DataChunk3 = new byte[0];
-            DataChunk4 = new byte[0];
-            DataChunk5 = new byte[0];
-            DataChunk6 = new byte[0];
-            DataChunk7 = new byte[0];
-            DataChunk8 = new byte[0];
-            DataChunk9 = new byte[0];
-        }
+        public string PersonId { get; set; }
+        public byte[] Token { get; set; }
     }
 }

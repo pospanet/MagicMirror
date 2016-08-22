@@ -1,5 +1,6 @@
 ﻿{
   "dependencies": {
+    "Microsoft.IdentityModel.Clients.ActiveDirectory": "3.13.2",
     "Microsoft.NETCore.UniversalWindowsPlatform": "5.2.2",
     "Microsoft.ProjectOxford.Emotion": "1.0.326",
     "Microsoft.ProjectOxford.Face": "1.1.0"
