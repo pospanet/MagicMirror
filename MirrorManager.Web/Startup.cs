@@ -75,7 +75,6 @@ namespace MirrorManager.Web
 
             var Authority = Configuration["Authentication:AzureAd:AADInstance"] + Configuration["Authentication:AzureAd:TenantId"];
 
-
             app.UseOpenIdConnectAuthentication(new OpenIdConnectOptions
             {
                 ClientId = Configuration["Authentication:AzureAd:ClientId"],
@@ -83,6 +82,7 @@ namespace MirrorManager.Web
                 Authority = Authority,
                 CallbackPath = Configuration["Authentication:AzureAd:CallbackPath"],
                 ResponseType = OpenIdConnectResponseType.CodeIdToken,
+                SaveTokens = true,
                 Events = new OpenIdConnectEvents()
                 {
                     OnAuthorizationCodeReceived = async context =>

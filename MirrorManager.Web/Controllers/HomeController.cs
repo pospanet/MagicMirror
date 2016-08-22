@@ -15,6 +15,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.ProjectOxford.Face;
 using MirrorManager.Web.Models;
 using System.Security.Claims;
+using Microsoft.Graph;
+using System.Net.Http.Headers;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace MirrorManager.Web.Controllers
 {
@@ -94,6 +97,30 @@ namespace MirrorManager.Web.Controllers
             await _userFunctions.setPersonIdAsync(oid.Value, null);
 
             return Json(new { message = "Identity deleted..." });
+        }
+
+        [Route("ajax/getAvatar")]
+        [HttpGet]
+        public async Task<IActionResult> getAvatar()
+        {
+            GraphServiceClient graphClient = new GraphServiceClient(
+                new DelegateAuthenticationProvider(
+                    async (requestMessage) =>
+                    {
+                        string accessToken = await HttpContext.Authentication.GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
+
+                        requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    }));
+            try
+            {
+                var photo = await graphClient.Me.Photo.Content.Request().GetAsync();
+
+                return File(photo, "image/jpg", "avatar.png");
+            }
+            catch (ServiceException se)
+            {
+                return Json(se);
+            }
         }
 
 
