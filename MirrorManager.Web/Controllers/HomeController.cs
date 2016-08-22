@@ -123,21 +123,15 @@ namespace MirrorManager.Web.Controllers
             }
         }
 
-
+        [Route("About")]
         public async Task<IActionResult> About()
         {
-            var accessToken = await HttpContext.Authentication.GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
-            var refreshToken = await HttpContext.Authentication.GetTokenAsync(OpenIdConnectParameterNames.RefreshToken);
-            Debug.WriteLine(accessToken);
-            ViewData["Message"] = "Your application description page.";
-
             return View();
         }
 
+        [Route("Contact")]
         public IActionResult Contact()
         {
-            ViewData["Message"] = "Your contact page.";
-
             return View();
         }
 

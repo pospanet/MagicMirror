@@ -2,14 +2,5 @@
 
 @if (User.Identity.IsAuthenticated)
 {
-    <ul class="nav navbar-nav navbar-right">
-        <li class="navbar-text">Hello @User.Identity.Name!</li>
-        <li><a asp-area="" asp-controller="Account" asp-action="SignOut">Sign Out</a></li>
-    </ul>
-}
-else
-{
-    <ul class="nav navbar-nav navbar-right">
-        <li><a asp-area="" asp-controller="Account" asp-action="Signin">Sign in</a></li>
-    </ul>
+    <div id="avatar" data-win-control="WinJS.UI.NavBarCommand" data-win-options="{ label: '@User.Identity.Name', icon: 'contact'}"></div>
 }

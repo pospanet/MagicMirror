@@ -1,13 +1,23 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿<h2 class="win-h2">Magic Mirror</h2>
+<div class="alert-area picture-info">
+    For the best effect, please take at least 3 different pictures of your face from different angles.
+</div>
+<div class="webcam-div">
+    <button id="switchCamera" data-win-control="WinJS.UI.AppBarCommand" data-win-options="{label:'Switch Camera', icon:'rotatecamera'}" type="button"></button>
+    <video autoplay id="video" class="webcam-img"></video>
+</div>
+<div class="actions">
+    <button id="linkFace" class="win-button">Capture</button>
+    <button id="deleteIdentity" class="win-button btn-red">Delete</button>
+</div>
+<script>
+    window.onload = (function () {
+        initWebcam();
+    });
+</script>
 
 <div class="row">
-    <video autoplay id="video" width="640" height="480"></video>
-    <input id="capture" disabled type="button" value="Capture" />
-    <input id="switchCamera" type="button" value="Switch camera" />
-    <canvas id="canvas" width="640" height="480"></canvas>
+    <canvas id="canvas"></canvas>
+    <input id="capture" type="button" value="!!!Save image for capture/check" />
     <input id="checkFace" type="button" value="Check face" />
-    <input id="linkFace" type="button" value="Link face" />
-    <input id="deleteIdentity" type="button" value="Delete identity" />
 </div>

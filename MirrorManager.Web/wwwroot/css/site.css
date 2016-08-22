@@ -1,38 +1,114 @@
-﻿body {
-    padding-top: 50px;
-    padding-bottom: 20px;
+﻿* {
+    font-family: "Segoe UI", sans-serif, "Segoe MDL2 Assets", "Symbols";
 }
 
-/* Wrapping element */
-/* Set some basic padding to keep content from hitting the edges */
-.body-content {
-    padding-left: 15px;
-    padding-right: 15px;
+.content,
+#app {
+    height: 100%;
 }
 
-/* Set widths on the form inputs since otherwise they're 100% wide */
-input,
-select,
-textarea {
-    max-width: 280px;
+    #app .win-splitviewpanetoggle {
+        float: left;
+    }
+
+    /* SplitView pane content style*/
+    #app .header {
+        white-space: nowrap;
+    }
+
+    #app .title {
+        font-size: 25px;
+        left: 50px;
+        margin-top: 6px;
+        vertical-align: middle;
+        display: inline-block;
+    }
+
+    #app .nav-commands {
+        margin-top: 20px;
+    }
+
+.win-navbarcommand-button {
+    background-color: transparent;
 }
 
-/* Carousel */
-.carousel-caption p {
-    font-size: 20px;
-    line-height: 1.4;
+#app .win-splitview-pane-hidden .win-navbarcommand-button {
+    width: 46px;
 }
 
-/* Make .svg files in the carousel display properly in older browsers */
-.carousel-inner .item img[src$=".svg"]
-{
+#app .win-splitview-pane-hidden .win-navbarcommand-label {
+    /* Workaround: Make sure pane doesn't scroll if ContentDialog restores focus to
+       NavBarCommand's label
+    */
+    visibility: hidden;
+}
+
+/*SplitView content style*/
+#app .win-splitview-content {
+    background-color: rgb(112,112,112);
+    height: initial !important;
+    min-height: 100%;
+}
+
+#app .contenttext {
+    margin-left: 20px;
+    margin-top: 6px;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
     width: 100%;
 }
 
-/* Hide/rearrange for smaller screens */
-@media screen and (max-width: 767px) {
-  /* Hide captions */
-  .carousel-caption {
-    display: none
-  }
+.contenttext {
+    margin-bottom: 20px;
+}
+
+.win-splitview-contentwrapper {
+    overflow: auto !important;
+}
+
+.alert-area {
+    border: 1px solid #FFF;
+    background: rgba(255, 255, 255, 0.3);
+    padding: 13px;
+    margin: 20px 20px 20px 0;
+}
+
+.webcam-div {
+    margin-right: 20px;
+    text-align: center;
+}
+
+.webcam-div > button {
+    position: absolute;
+}
+
+.webcam-img {
+    max-width: 95%;
+}
+
+.actions {
+    margin: 20px;
+    text-align: center;
+}
+
+.btn-red {
+    background: #F22613;
+}
+
+/* Icons */
+.user-image > div > div > .win-navbarcommand-icon{
+    background-size: cover;
+    background-position: center;
+    width: 40px;
+    height: 40px;
+    margin-left: -11px;
+    margin-top: 4px;
+    border-radius: 20px;
+}
+
+.picture-info {
+    text-align: center;
 }
