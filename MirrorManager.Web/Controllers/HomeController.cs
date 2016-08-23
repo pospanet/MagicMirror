@@ -128,7 +128,7 @@ namespace MirrorManager.Web.Controllers
         }
 
         [Route("About")]
-        public async Task<IActionResult> About()
+        public IActionResult About()
         {
             return View();
         }
