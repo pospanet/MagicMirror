@@ -207,10 +207,8 @@ function deleteIdentity() {
 function getAvatar() {
     let url = "/ajax/getAvatar";
     $.ajax({
-        url: url,
-        cache: true,
-        processData: false,
-    }).success(function () {
+        url: url
+    }).success(function (data) {
         $("#avatar .win-navbarcommand-icon").css({"background-image": "url('" + url +"')", "-ms-high-contrast-adjust": "none"}).fadeIn().html("");
         $("#avatar").addClass("user-image");
     });

@@ -18,6 +18,7 @@ using System.Security.Claims;
 using Microsoft.Graph;
 using System.Net.Http.Headers;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using System.Globalization;
 
 namespace MirrorManager.Web.Controllers
 {
@@ -98,7 +99,7 @@ namespace MirrorManager.Web.Controllers
 
             return Json(new { message = "Identity deleted..." });
         }
-
+        
         [Route("ajax/getAvatar")]
         [HttpGet]
         public async Task<IActionResult> getAvatar()
@@ -115,6 +116,8 @@ namespace MirrorManager.Web.Controllers
             {
                 var photo = await graphClient.Me.Photo.Content.Request().GetAsync();
 
+                Response.Headers["Expires"] = DateTime.UtcNow.AddMinutes(10).ToString("R");
+                
                 return File(photo, "image/jpg", "avatar.png");
             }
             catch (ServiceException se)
