@@ -8,16 +8,11 @@
 </div>
 <div class="actions">
     <button id="linkFace" class="win-button">Capture</button>
-    <button id="deleteIdentity" class="win-button btn-red">Delete</button>
+    <button id="deleteIdentity" class="win-button btn-red">Delete identity</button>
+    <canvas id="canvas" style="display: none;"></canvas>
 </div>
 <script>
     window.onload = (function () {
         initWebcam();
     });
 </script>
-
-<div class="row">
-    <canvas id="canvas"></canvas>
-    <input id="capture" type="button" value="!!!Save image for capture/check" />
-    <input id="checkFace" type="button" value="Check face" />
-</div>

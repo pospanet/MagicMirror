@@ -4,8 +4,9 @@ var mediaStream = null;
 var webcamList;
 var currentCam = null;
 
-var writeError = function (string) {
-    alert(string);
+var writeError = function (message) {
+    alert(message);
+    console.error(message);
 };
 
 var initializeVideoStream = function (stream) {
@@ -19,8 +20,9 @@ var initializeVideoStream = function (stream) {
     $("#capture").removeAttr("disabled");
 
     if (webcamList.length > 1) {
-        $('#switchCamera').removeAttr("disabled");
+        $('#switchCamera, #linkFace').removeAttr("disabled");
     }
+    $('#linkFace').removeAttr("disabled");
 };
 
 var getUserMediaError = function (e) {
@@ -54,7 +56,7 @@ var capture = function () {
 };
 
 var nextWebCam = function () {
-    $('#switchCamera').attr('disabled', 'disabled');
+    $('#switchCamera, #linkFace').attr('disabled', 'disabled');
     if (currentCam !== null) {
         currentCam++;
         if (currentCam >= webcamList.length) {
@@ -106,7 +108,7 @@ var devicesCallback = function (devices) {
         // Start video with the first device on the list
         nextWebCam();
         if (webcamList.length > 1) {
-            $('#switchCamera').removeAttr("disabled");;
+            $('#switchCamera').removeAttr("disabled");
         }
         else {
             $('#switchCamera').attr("disabled", "disabled");
@@ -122,9 +124,7 @@ var initWebcam = function () {
     if (navigator.getUserMedia) {
         enumerateMediaDevices();
 
-        $('#capture').on('click', capture);
         $('#switchCamera').on('click', nextWebCam);
-        $("#checkFace").on("click", checkFace);
         $("#linkFace").on("click", linkFace);
         $("#deleteIdentity").on("click", deleteIdentity);
     }
@@ -133,9 +133,7 @@ var initWebcam = function () {
     }
 };
 
-function checkFace() {
-    $("#checkFace").attr('disabled', 'disabled');
-    $("#checkFace").attr("value", "Uploading...");
+function checkFace(callback) {
     var img = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
     $.ajax({
         url: "/ajax/checkFace",
@@ -144,41 +142,58 @@ function checkFace() {
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: function (data) {
-            alert(JSON.stringify(data));
-            $("#checkFace").removeAttr('disabled');
-            $("#checkFace").attr("value", "Check face");
+            callback(data);
         },
         error: function () {
-            alert("There was some error while uploading Image");
-            $("#checkFace").removeAttr('disabled');
-            $("#checkFace").attr("value", "Check face");
+            writeError("There was some error while uploading Image");
+            callback(false);
         }
     });
 }
 function linkFace() {
     $("#linkFace").attr('disabled', 'disabled');
-    $("#linkFace").attr("value", "Uploading...");
-    var img = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
-    $.ajax({
-        url: "/ajax/linkFace",
-        type: "POST",
-        data: JSON.stringify({ image: img }),
-        contentType: "application/json; charset=utf-8",
-        dataType: "json",
-        success: function (data) {
-            if (data.error) {
-                alert(data.error);
+    $("#linkFace").html("Checking face presence...");
+    capture();
+
+    checkFace(function (data) {
+        if (data !== false) {
+            if (data.length === 1) {
+                $("#linkFace").html("Uploading...");
+                var img = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+                $.ajax({
+                    url: "/ajax/linkFace",
+                    type: "POST",
+                    data: JSON.stringify({ image: img }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.error) {
+                            writeError(data.error);
+                        }
+                        $("#linkFace").html("Captured successfully...");
+                        setTimeout(function () {
+                            $("#linkFace").removeAttr('disabled');
+                            $("#linkFace").html("Capture");
+                        }, 2000);
+                    },
+                    error: function () {
+                        writeError("There was some error while uploading image");
+                        $("#linkFace").removeAttr('disabled');
+                        $("#linkFace").html("Capture");
+                    }
+                });
+            } else if (data.length === 0) {
+                alert("No face was detected in the picture, please try again!");
+                $("#linkFace").removeAttr('disabled');
+                $("#linkFace").html("Capture");
+            } else {
+                alert("Only one face can be present in the picture!");
+                $("#linkFace").removeAttr('disabled');
+                $("#linkFace").html("Capture");
             }
-            else {
-                alert(JSON.stringify(data));
-            }
+        } else {
             $("#linkFace").removeAttr('disabled');
-            $("#linkFace").attr("value", "Link face");
-        },
-        error: function () {
-            alert("There was some error while uploading image");
-            $("#linkFace").removeAttr('disabled');
-            $("#linkFace").attr("value", "Link face");
+            $("#linkFace").html("Capture");
         }
     });
 }

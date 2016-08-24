@@ -75,6 +75,7 @@ namespace MirrorManager.Web.Controllers
             try
             {
                 var returnedFace = await _faceClient.AddPersonFaceAsync(_configuration["personGroupId"], Guid.Parse(personId), ms);
+                await _faceClient.TrainPersonGroupAsync(_configuration["personGroupId"]);
                 return Json(returnedFace);
             }
             catch (FaceAPIException e)
@@ -127,7 +128,7 @@ namespace MirrorManager.Web.Controllers
         }
 
         [Route("About")]
-        public async Task<IActionResult> About()
+        public IActionResult About()
         {
             return View();
         }
