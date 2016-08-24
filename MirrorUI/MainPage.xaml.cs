@@ -77,14 +77,14 @@ namespace Pospa.NET.MagicMirror.UI
         private void InitializeClock()
         {
             DispatcherTimer timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(10);
+            timer.Interval = TimeSpan.FromSeconds(15);
             timer.Tick += Timer_Tick;
             timer.Start();
         }
 
         private void Timer_Tick(object sender, object e)
         {
-            Dispatcher.RunAsync(CoreDispatcherPriority.High,
+            Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
                 () => { tbTime.Text = DateTime.Now.ToLocalTime().ToString("f"); });
         }
 
@@ -106,6 +106,11 @@ namespace Pospa.NET.MagicMirror.UI
 
                 if (!localFace.Any())
                 {
+                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => {
+                        tbName.Text = string.Empty;
+                        tbDrive.Text = string.Empty;
+                        tbNext.Text = string.Empty;
+                    });
                     continue;
                 }
                 Face[] faces = await client.DetectAsync(photoStream, true, true);
@@ -120,17 +125,7 @@ namespace Pospa.NET.MagicMirror.UI
                     personIds.Select(async p => await client.GetPersonAsync(PersonGroupId, p)).ToArray();
                 Task.WaitAll(personTasks);
 
-                ShowPersonalizedInfoPanel(personTasks.First().Result);
-                //Person[] allPersons = await client.GetPersonsAsync(PersonGroupId);
-
-                //Person[] allKnownPersons = allPersons.Where(person => persons.Contains(person.PersonId)).ToArray();
-
-                //foreach (
-                //    Person person in
-                //        allPersons.Where(p => !_lastSeenPersonList.Select(lsp => lsp.PersonId).Contains(p.PersonId)))
-                //{
-                //    ShowPersonalizedInfoPanel(person);
-                //}
+                await ShowPersonalizedInfoPanel(personTasks.First().Result);
             }
         }
 
@@ -158,7 +153,37 @@ namespace Pospa.NET.MagicMirror.UI
                 new QueryOption(EndDatetimeGraphQueryOption, DateTime.UtcNow.AddDays(1).ToString("o"))
             };
             IUserCalendarViewCollectionPage cal = await graphClient.Me.CalendarView.Request(options).Top(1).GetAsync();
-            DrivingInfo drivingInfo = await GetDrivingInfoAsync(me.City);
+            DrivingInfo drivingInfo;
+            string displayName, displayDrive, displayNext;
+            try
+            {
+                drivingInfo = await GetDrivingInfoAsync(me.City); displayDrive = string.Concat("Office ETA ", (drivingInfo.DurationTrafic / 60).ToString("F0"), "mins (", drivingInfo.Distance.ToString("F0"), "Km)");
+            }
+            catch
+            { displayDrive = string.Empty; }
+
+            if (!string.IsNullOrEmpty(me.DisplayName))
+            {
+                displayName = string.Concat("Hi ", me.DisplayName);
+            }
+            else
+            {
+                displayName = string.Empty;
+            }
+            if (cal.FirstOrDefault() != null)
+            {
+                displayNext = string.Concat("Next ", cal.FirstOrDefault().Subject, " @ ", cal.FirstOrDefault().Location.DisplayName);
+            }
+            else
+            {
+                displayNext = string.Empty;
+            }
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                tbName.Text = displayName;
+                tbDrive.Text = displayDrive;
+                tbNext.Text = displayNext;
+            });
         }
 
         private static async Task<DrivingInfo> GetDrivingInfoAsync(string to, string from = null)
