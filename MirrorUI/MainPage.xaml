@@ -6,7 +6,11 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="Black">
+        <TextBlock x:Name="tbTime" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="DateTime" VerticalAlignment="Top" FontSize="72" FontFamily="Segoe UI Black" FontWeight="Bold" Foreground="White"/>
+        <TextBlock x:Name="tbName" HorizontalAlignment="Left" Margin="10,90,0,0" TextWrapping="Wrap" Text="User Name" VerticalAlignment="Top" FontSize="72" FontFamily="Segoe UI Black" FontWeight="Bold" Foreground="White"/>
+        <TextBlock x:Name="tbDrive" HorizontalAlignment="Left" Margin="10,180,0,0" TextWrapping="Wrap" Text="Drive Time" VerticalAlignment="Top" FontSize="72" FontFamily="Segoe UI Black" FontWeight="Bold" Foreground="White"/>
+        <TextBlock x:Name="tbNext" HorizontalAlignment="Left" Margin="10,270,0,0" TextWrapping="Wrap" Text="Next Event" VerticalAlignment="Top" FontSize="72" FontFamily="Segoe UI Black" FontWeight="Bold" Foreground="White"/>
 
     </Grid>
 </Page>
