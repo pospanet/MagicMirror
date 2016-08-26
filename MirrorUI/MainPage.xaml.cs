@@ -9,13 +9,10 @@ using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Geolocation;
 using Windows.Graphics.Imaging;
-using Windows.Media.Audio;
 using Windows.Media.Capture;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
-using Windows.Security.ExchangeActiveSyncProvisioning;
 using Windows.Storage.Streams;
-using Windows.System.Profile;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -33,7 +30,6 @@ namespace Pospa.NET.MagicMirror.UI
 {
     public sealed partial class MainPage : Page
     {
-
         #region app/user keys
 
         private const string OxfordApiKey = "<Oxford Api Key>";
@@ -44,7 +40,6 @@ namespace Pospa.NET.MagicMirror.UI
 
         #endregion
 
-        private const double MinConfidenceLevel = 75;
         private const float SourceImageHeightLimit = 1024;
         private const BitmapPixelFormat FaceDetectionPixelFormat = BitmapPixelFormat.Gray8;
 
@@ -61,18 +56,14 @@ namespace Pospa.NET.MagicMirror.UI
         private readonly CancellationTokenSource _cancellationTokenSource;
 
 
-        private readonly List<Person> _lastSeenPersonList;
-
         static MainPage()
         {
             WebRequestHelper = new WebRequestHelper(new Uri(BingMapsBaseUrl));
-            SystemInfo info = new SystemInfo();
         }
 
         public MainPage()
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            _lastSeenPersonList = new List<Person>();
             InitializeComponent();
             InitializeClock();
             InitializeCameraAsync()
@@ -100,27 +91,29 @@ namespace Pospa.NET.MagicMirror.UI
                     async () => { await Geolocator.RequestAccessAsync(); });
 
             FaceServiceClient client = new FaceServiceClient(OxfordApiKey);
-            FaceDetector faceDetector = await FaceDetector.CreateAsync();
+            FaceDetector faceDetector = FaceDetector.IsSupported ? await FaceDetector.CreateAsync() : null;
             while (!cancellationToken.IsCancellationRequested)
             {
-                Stream photoStream = new MemoryStream();
-                photoStream = await GetPhotoStreamAsync(mediaCapture);
+                Stream photoStream = await GetPhotoStreamAsync(mediaCapture);
 
-                SoftwareBitmap image = await ConvertImageForFaceDetection(photoStream.AsRandomAccessStream());
+                if (FaceDetector.IsSupported)
+                {
+                    SoftwareBitmap image = await ConvertImageForFaceDetection(photoStream.AsRandomAccessStream());
 
-                //IList<DetectedFace> localFace = await faceDetector.DetectFacesAsync(image);
+                    IList<DetectedFace> localFace = await faceDetector.DetectFacesAsync(image);
 
-                //if (!localFace.Any())
-                //{
-                //    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                //    {
-                //        tbName.Text = string.Empty;
-                //        tbDrive.Text = string.Empty;
-                //        tbNext.Text = string.Empty;
-                //    });
-                //    continue;
-                //}
-                //HockeyClient.Current.TrackEvent("Face Detected");
+                    if (!localFace.Any())
+                    {
+                        await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                        {
+                            tbName.Text = string.Empty;
+                            tbDrive.Text = string.Empty;
+                            tbNext.Text = string.Empty;
+                        });
+                        continue;
+                    }
+                    HockeyClient.Current.TrackEvent("Face Detected Locally");
+                }
                 Face[] faces = await client.DetectAsync(photoStream, true, true);
                 if (!faces.Any())
                 {
@@ -132,6 +125,7 @@ namespace Pospa.NET.MagicMirror.UI
                     });
                     continue;
                 }
+                HockeyClient.Current.TrackEvent("Face Detected Remotely (Oxford)");
                 IdentifyResult[] identifyResults;
                 try
                 {
@@ -141,7 +135,7 @@ namespace Pospa.NET.MagicMirror.UI
                 catch (Exception ex)
                 {
                     HockeyClient.Current.TrackEvent("Face API IdentifyAsync - Exception",
-                        new Dictionary<string, string> { { "Message", ex.Message } });
+                        new Dictionary<string, string> {{"Message", ex.Message}});
                     continue;
                 }
 
@@ -155,7 +149,7 @@ namespace Pospa.NET.MagicMirror.UI
                 if (personTasks.Any() && personTasks.First().Result != null)
                 {
                     Person person = personTasks.First().Result;
-                    HockeyClient.Current.TrackEvent("Face Recognized",
+                    HockeyClient.Current.TrackEvent("Face Recognized (Oxford)",
                         new Dictionary<string, string>
                         {
                             {"Person ID", person.PersonId.ToString()},
@@ -164,7 +158,6 @@ namespace Pospa.NET.MagicMirror.UI
                     try
                     {
                         await ShowPersonalizedInfoPanel(person);
-
                     }
                     catch (Exception ex)
                     {
@@ -174,12 +167,12 @@ namespace Pospa.NET.MagicMirror.UI
                 }
                 else
                 {
-                        await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                        {
-                            tbName.Text = string.Empty;
-                            tbDrive.Text = string.Empty;
-                            tbNext.Text = string.Empty;
-                        });
+                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        tbName.Text = string.Empty;
+                        tbDrive.Text = string.Empty;
+                        tbNext.Text = string.Empty;
+                    });
                 }
             }
         }
@@ -305,7 +298,7 @@ namespace Pospa.NET.MagicMirror.UI
             return image;
         }
 
-        private async Task<MediaCapture> InitializeCameraAsync()
+        private static async Task<MediaCapture> InitializeCameraAsync()
         {
             DeviceInformationCollection allVideoDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
             DeviceInformation cameraDevice = allVideoDevices.FirstOrDefault();
