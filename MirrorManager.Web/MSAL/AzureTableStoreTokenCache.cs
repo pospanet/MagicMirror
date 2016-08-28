@@ -13,6 +13,7 @@ namespace MirrorManager.Web.MSAL
         private readonly CloudTable _tokenCacheTable;
         private readonly string _userId;
         private TokenCacheEntity _tokenCacheEntity;
+        private string _personId;
 
         private AzureTableStoreTokenCache(string userId, CloudTable tokenCacheTable)
         {
@@ -45,7 +46,7 @@ namespace MirrorManager.Web.MSAL
 
         private void AfterAccessNotification(TokenCacheNotificationArgs args)
         {
-            TokenCacheEntity tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId) {Token = Serialize()};
+            TokenCacheEntity tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId) {Token = Serialize(), PersonId = _personId};
             TableOperation tokenCacheTableOperation = TableOperation.InsertOrReplace(tokenCacheEntity);
             Task<TableResult> tableOperationTask = _tokenCacheTable.ExecuteAsync(tokenCacheTableOperation);
             if (!tableOperationTask.IsCompleted)
@@ -72,6 +73,7 @@ namespace MirrorManager.Web.MSAL
                 TokenCacheEntity tokenCacheEntity = (TokenCacheEntity) tokenRecords.Result;
                 Deserialize(tokenCacheEntity.Token);
                 _tokenCacheEntity = tokenCacheEntity;
+                _personId = _tokenCacheEntity.PersonId;
             }
         }
 
@@ -84,6 +86,20 @@ namespace MirrorManager.Web.MSAL
             if (!tableOperationTask.IsCompleted)
             {
                 tableOperationTask.Wait();
+            }
+        }
+
+        public async Task<bool> UserExists(string userId)
+        {
+            TableOperation tokenCacheTableOperation = TableOperation.Retrieve<TokenCacheEntity>(PartitionKey, _userId);
+            TableResult tokenRecords = await _tokenCacheTable.ExecuteAsync(tokenCacheTableOperation);
+            if (tokenRecords.Result == null)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
             }
         }
 
@@ -108,7 +124,7 @@ namespace MirrorManager.Web.MSAL
         public TokenCacheEntity()
         {
             Token = new byte[0];
-            PersonId = null;
+            PersonId = string.Empty;
         }
 
         public string PersonId { get; set; }

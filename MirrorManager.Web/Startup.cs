@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Http;
 using MirrorManager.Web.MSAL;
 using MirrorManager.Web.MSAL.Configuration;
 using MirrorManager.Web.Models;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 
 namespace MirrorManager.Web
 {
@@ -87,9 +89,27 @@ namespace MirrorManager.Web
                 {
                     OnAuthorizationCodeReceived = async context =>
                     {
-                        TokenCacheConfig TokenCacheConfig = new TokenCacheConfig(Configuration);
                         string userId = context.JwtSecurityToken.Claims.FirstOrDefault(c => c.Type.Equals("oid")).Value;
+
+                        TokenCacheConfig TokenCacheConfig = new TokenCacheConfig(Configuration);
                         AzureTableStoreTokenCache tokenCache = await AzureTableStoreTokenCache.GetTokenCacheAsync(TokenCacheConfig, userId);
+                        
+                        if (!await tokenCache.UserExists(userId))
+                        {
+                            string userUpn = context.JwtSecurityToken.Claims.FirstOrDefault(c => c.Type.Equals("upn")).Value;
+                            string userFirstName = context.JwtSecurityToken.Claims.FirstOrDefault(c => c.Type.Equals("given_name")).Value;
+                            var sg = new SendGridAPIClient(Configuration["SENDGRID"]);
+
+                            Email from = new Email("mail@magicmirror.azurewebsites.net", "Magic Mirror");
+                            Email to = new Email(userUpn);
+                            string subject = "Hello from Magic Mirror @ DRIVE FY17!";
+                            Content content = new Content("text/html", " ");
+                            Mail mail = new Mail(from, subject, to, content);
+                            mail.TemplateId = "f76ceeb2-8ee5-4ff7-9b8a-a7358125b717";
+                            mail.Personalization[0].AddSubstitution("-name-", userFirstName);
+
+                            var response = await sg.client.mail.send.post(requestBody: mail.Get());
+                        }
 
                         // given the authorization code
                         var authorizationCode = context.ProtocolMessage.Code;

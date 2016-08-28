@@ -26,7 +26,10 @@ namespace MirrorManager.Web.Models
         {
             TableOperation retrieveOperation = TableOperation.Retrieve<TokenCacheEntity>(PartitionKey, userId);
             TableResult retrievedResult = await _tokenCache.ExecuteAsync(retrieveOperation);
-
+            if(retrievedResult.Result == null)
+            {
+                return string.Empty;
+            }
             return ((TokenCacheEntity)retrievedResult.Result).PersonId;
         }
 

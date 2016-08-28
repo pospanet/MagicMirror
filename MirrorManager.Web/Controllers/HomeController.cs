@@ -37,9 +37,6 @@ namespace MirrorManager.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            Claim oid = User.Claims.FirstOrDefault(x => x.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier");
-            var personId = await _userFunctions.getPersonIdAsync(oid.Value);
-
             return View();
         }
 
@@ -61,7 +58,7 @@ namespace MirrorManager.Web.Controllers
         {
             Claim oid = User.Claims.FirstOrDefault(x => x.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier");
             var personId = await _userFunctions.getPersonIdAsync(oid.Value);
-            if(personId == null)
+            if(String.IsNullOrEmpty(personId))
             {
                 var person = await _faceClient.CreatePersonAsync(_configuration["personGroupId"], oid.Value);
                 await _userFunctions.setPersonIdAsync(oid.Value, person.PersonId.ToString());
