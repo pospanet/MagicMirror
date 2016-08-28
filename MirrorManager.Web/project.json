@@ -26,6 +26,7 @@
     "Microsoft.IdentityModel.Clients.ActiveDirectory": "3.13.1",
     "Microsoft.ProjectOxford.Face": "1.1.0",
     "Microsoft.VisualStudio.Web.BrowserLink.Loader": "14.0.0",
+    "Sendgrid": "8.0.4",
     "System.Runtime.Serialization.Primitives": "4.1.1",
     "WindowsAzure.Storage": "7.2.0"
   },
