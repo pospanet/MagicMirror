@@ -17,10 +17,12 @@ using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Microsoft.Graph;
+using Microsoft.HockeyApp;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.ProjectOxford.Face;
 using Microsoft.ProjectOxford.Face.Contract;
 using Newtonsoft.Json.Linq;
+using Pospa.Mirror.Common;
 using Pospa.Mirror.Common.MSAL;
 using Pospa.Mirror.Common.Web;
 
@@ -28,7 +30,6 @@ namespace Pospa.NET.MagicMirror.UI
 {
     public sealed partial class MainPage : Page
     {
-
         #region app/user keys
 
         private const string OxfordApiKey = "<Oxford Api Key>";
@@ -39,7 +40,6 @@ namespace Pospa.NET.MagicMirror.UI
 
         #endregion
 
-        private const double MinConfidenceLevel = 75;
         private const float SourceImageHeightLimit = 1024;
         private const BitmapPixelFormat FaceDetectionPixelFormat = BitmapPixelFormat.Gray8;
 
@@ -56,8 +56,6 @@ namespace Pospa.NET.MagicMirror.UI
         private readonly CancellationTokenSource _cancellationTokenSource;
 
 
-        private readonly List<Person> _lastSeenPersonList;
-
         static MainPage()
         {
             WebRequestHelper = new WebRequestHelper(new Uri(BingMapsBaseUrl));
@@ -66,7 +64,6 @@ namespace Pospa.NET.MagicMirror.UI
         public MainPage()
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            _lastSeenPersonList = new List<Person>();
             InitializeComponent();
             InitializeClock();
             InitializeCameraAsync()
@@ -76,8 +73,7 @@ namespace Pospa.NET.MagicMirror.UI
 
         private void InitializeClock()
         {
-            DispatcherTimer timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(15);
+            DispatcherTimer timer = new DispatcherTimer {Interval = TimeSpan.FromSeconds(15)};
             timer.Tick += Timer_Tick;
             timer.Start();
         }
@@ -95,28 +91,53 @@ namespace Pospa.NET.MagicMirror.UI
                     async () => { await Geolocator.RequestAccessAsync(); });
 
             FaceServiceClient client = new FaceServiceClient(OxfordApiKey);
-            FaceDetector faceDetector = await FaceDetector.CreateAsync();
+            FaceDetector faceDetector = FaceDetector.IsSupported ? await FaceDetector.CreateAsync() : null;
             while (!cancellationToken.IsCancellationRequested)
             {
                 Stream photoStream = await GetPhotoStreamAsync(mediaCapture);
 
-                SoftwareBitmap image = await ConvertImageForFaceDetection(photoStream.AsRandomAccessStream());
-
-                IList<DetectedFace> localFace = await faceDetector.DetectFacesAsync(image);
-
-                if (!localFace.Any())
+                if (FaceDetector.IsSupported)
                 {
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => {
+                    SoftwareBitmap image = await ConvertImageForFaceDetection(photoStream.AsRandomAccessStream());
+
+                    IList<DetectedFace> localFace = await faceDetector.DetectFacesAsync(image);
+
+                    if (!localFace.Any())
+                    {
+                        await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                        {
+                            tbName.Text = string.Empty;
+                            tbDrive.Text = string.Empty;
+                            tbNext.Text = string.Empty;
+                        });
+                        continue;
+                    }
+                    HockeyClient.Current.TrackEvent("Face Detected Locally");
+                }
+                Face[] faces = await client.DetectAsync(photoStream, true, true);
+                if (!faces.Any())
+                {
+                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
                         tbName.Text = string.Empty;
                         tbDrive.Text = string.Empty;
                         tbNext.Text = string.Empty;
                     });
                     continue;
                 }
-                Face[] faces = await client.DetectAsync(photoStream, true, true);
+                HockeyClient.Current.TrackEvent("Face Detected Remotely (Oxford)");
                 IdentifyResult[] identifyResults;
-                identifyResults =
-                    await client.IdentifyAsync(PersonGroupId, faces.Select(face => face.FaceId).ToArray());
+                try
+                {
+                    identifyResults =
+                        await client.IdentifyAsync(PersonGroupId, faces.Select(face => face.FaceId).ToArray());
+                }
+                catch (Exception ex)
+                {
+                    HockeyClient.Current.TrackEvent("Face API IdentifyAsync - Exception",
+                        new Dictionary<string, string> {{"Message", ex.Message}});
+                    continue;
+                }
 
 
                 Guid[] personIds = identifyResults.Select(r => r.Candidates.First().PersonId).ToArray();
@@ -125,7 +146,34 @@ namespace Pospa.NET.MagicMirror.UI
                     personIds.Select(async p => await client.GetPersonAsync(PersonGroupId, p)).ToArray();
                 Task.WaitAll(personTasks);
 
-                await ShowPersonalizedInfoPanel(personTasks.First().Result);
+                if (personTasks.Any() && personTasks.First().Result != null)
+                {
+                    Person person = personTasks.First().Result;
+                    HockeyClient.Current.TrackEvent("Face Recognized (Oxford)",
+                        new Dictionary<string, string>
+                        {
+                            {"Person ID", person.PersonId.ToString()},
+                            {"Graph User ID", person.Name}
+                        });
+                    try
+                    {
+                        await ShowPersonalizedInfoPanel(person);
+                    }
+                    catch (Exception ex)
+                    {
+                        HockeyClient.Current.TrackEvent("ShowPersonalizedInfoPanel - Exception",
+                            new Dictionary<string, string> {{"Message", ex.Message}});
+                    }
+                }
+                else
+                {
+                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        tbName.Text = string.Empty;
+                        tbDrive.Text = string.Empty;
+                        tbNext.Text = string.Empty;
+                    });
+                }
             }
         }
 
@@ -157,10 +205,16 @@ namespace Pospa.NET.MagicMirror.UI
             string displayName, displayDrive, displayNext;
             try
             {
-                drivingInfo = await GetDrivingInfoAsync(me.City); displayDrive = string.Concat("Office ETA ", (drivingInfo.DurationTrafic / 60).ToString("F0"), "mins (", drivingInfo.Distance.ToString("F0"), "Km)");
+                drivingInfo = await GetDrivingInfoAsync(me.City);
+                displayDrive = string.Concat("Office ETA ", (drivingInfo.DurationTrafic/60).ToString("F0"), "mins (",
+                    drivingInfo.Distance.ToString("F0"), "Km)");
             }
-            catch
-            { displayDrive = string.Empty; }
+            catch (Exception ex)
+            {
+                displayDrive = string.Empty;
+                HockeyClient.Current.TrackEvent("GetDrivingInfoAsync - Exception",
+                    new Dictionary<string, string> {{"Message", ex.Message}});
+            }
 
             if (!string.IsNullOrEmpty(me.DisplayName))
             {
@@ -169,14 +223,19 @@ namespace Pospa.NET.MagicMirror.UI
             else
             {
                 displayName = string.Empty;
+                HockeyClient.Current.TrackEvent("User Display Name",
+                    new Dictionary<string, string> {{"User", me.Id}});
             }
             if (cal.FirstOrDefault() != null)
             {
-                displayNext = string.Concat("Next ", cal.FirstOrDefault().Subject, " @ ", cal.FirstOrDefault().Location.DisplayName);
+                displayNext = string.Concat("Next: ", cal.FirstOrDefault().Subject, " @ ",
+                    cal.FirstOrDefault().Location.DisplayName);
             }
             else
             {
                 displayNext = string.Empty;
+                HockeyClient.Current.TrackEvent("User Calendar",
+                    new Dictionary<string, string> {{"User", me.Id}});
             }
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
@@ -239,7 +298,7 @@ namespace Pospa.NET.MagicMirror.UI
             return image;
         }
 
-        private async Task<MediaCapture> InitializeCameraAsync()
+        private static async Task<MediaCapture> InitializeCameraAsync()
         {
             DeviceInformationCollection allVideoDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
             DeviceInformation cameraDevice = allVideoDevices.FirstOrDefault();

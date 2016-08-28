@@ -4,6 +4,7 @@ using Windows.ApplicationModel.Activation;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
+using Microsoft.HockeyApp;
 
 namespace Pospa.NET.MagicMirror.UI
 {
@@ -16,8 +17,18 @@ namespace Pospa.NET.MagicMirror.UI
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
+        private const string HockeyAppId = "fe76c3c49acd42059dd8b6b45834a729";
+
         public App()
         {
+            HockeyClient.Current.Configure(HockeyAppId,
+                new TelemetryConfiguration()
+                {
+                    EnableDiagnostics = true,
+                    Collectors =
+                        WindowsCollectors.Metadata | WindowsCollectors.Session | WindowsCollectors.UnhandledException
+                })
+                .SetExceptionDescriptionLoader((Exception ex) => "Exception HResult: " + ex.HResult);
             this.InitializeComponent();
             this.Suspending += OnSuspending;
         }
