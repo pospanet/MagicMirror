@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.Diagnostics;
-//using Microsoft.ProjectOxford.Face;
 using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;

@@ -38,6 +38,7 @@ namespace Pospa.NET.MagicMirror.UI
         private const string BingMapsApiKey = "<Bing Maps API key>";
         private const string PersonGroupId = "<Person Group ID>";
 
+
         #endregion
 
         private const float SourceImageHeightLimit = 1024;
