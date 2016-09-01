@@ -68,6 +68,19 @@ namespace MirrorManager.Web
             }
             else
             {
+                app.Use(async (context, next) =>
+                {
+                    if (context.Request.IsHttps)
+                    {
+                        await next();
+                    }
+                    else
+                    {
+                        var httpsUrl = "https://" + context.Request.Host + context.Request.Path;
+                        context.Response.Redirect(httpsUrl);
+                    }
+                });
+
                 app.UseExceptionHandler("/Home/Error");
             }
 
