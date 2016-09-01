@@ -1,6 +1,7 @@
 ﻿using System;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
@@ -21,6 +22,7 @@ namespace Pospa.NET.MagicMirror.UI
 
         public App()
         {
+
             HockeyClient.Current.Configure(HockeyAppId,
                 new TelemetryConfiguration()
                 {
@@ -31,6 +33,7 @@ namespace Pospa.NET.MagicMirror.UI
                 .SetExceptionDescriptionLoader((Exception ex) => "Exception HResult: " + ex.HResult);
             this.InitializeComponent();
             this.Suspending += OnSuspending;
+            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.FullScreen;
         }
 
         /// <summary>

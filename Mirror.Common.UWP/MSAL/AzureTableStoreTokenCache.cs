@@ -13,6 +13,7 @@ namespace Pospa.Mirror.Common.MSAL
         private readonly CloudTable _tokenCacheTable;
         private readonly string _userId;
         private TokenCacheEntity _tokenCacheEntity;
+        private string _personId;
 
         private AzureTableStoreTokenCache(string userId, CloudTable tokenCacheTable)
         {
@@ -45,7 +46,11 @@ namespace Pospa.Mirror.Common.MSAL
 
         private void AfterAccessNotification(TokenCacheNotificationArgs args)
         {
-            TokenCacheEntity tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId) {Token = Serialize()};
+            TokenCacheEntity tokenCacheEntity = new TokenCacheEntity(PartitionKey, _userId)
+            {
+                Token = Serialize(),
+                PersonId = _personId
+            };
             TableOperation tokenCacheTableOperation = TableOperation.InsertOrReplace(tokenCacheEntity);
             Task<TableResult> tableOperationTask = _tokenCacheTable.ExecuteAsync(tokenCacheTableOperation);
             if (!tableOperationTask.IsCompleted)
@@ -71,6 +76,7 @@ namespace Pospa.Mirror.Common.MSAL
             {
                 TokenCacheEntity tokenCacheEntity = (TokenCacheEntity) tokenRecords.Result;
                 Deserialize(tokenCacheEntity.Token);
+                _personId = tokenCacheEntity.PersonId;
             }
         }
 
@@ -106,7 +112,7 @@ namespace Pospa.Mirror.Common.MSAL
 
         public TokenCacheEntity()
         {
-            PersonId = null;
+            PersonId = string.Empty;
             Token = new byte[0];
         }
 

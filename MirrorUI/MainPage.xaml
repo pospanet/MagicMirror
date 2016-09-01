@@ -7,10 +7,10 @@
     mc:Ignorable="d">
 
     <Grid Background="Black">
-        <TextBlock x:Name="tbTime" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="DateTime" VerticalAlignment="Top" FontSize="68" Foreground="White"/>
-        <TextBlock x:Name="tbName" HorizontalAlignment="Left" Margin="10,90,0,0" TextWrapping="Wrap" Text="User Name" VerticalAlignment="Top" FontSize="48" Foreground="White"/>
-        <TextBlock x:Name="tbDrive" HorizontalAlignment="Left" Margin="10,150,0,0" TextWrapping="Wrap" Text="Drive Time" VerticalAlignment="Top" FontSize="48" Foreground="White"/>
-        <TextBlock x:Name="tbNext" HorizontalAlignment="Left" Margin="10,210,0,0" TextWrapping="Wrap" Text="Next Event" VerticalAlignment="Top" FontSize="48" Foreground="White"/>
+        <TextBlock x:Name="tbTime" HorizontalAlignment="Right" Margin="10,10,0,0" TextWrapping="Wrap" Text="Initializing..." VerticalAlignment="Bottom" FontSize="68" Foreground="White"/>
+        <TextBlock x:Name="tbName" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="Initializing..." VerticalAlignment="Top" FontSize="48" Foreground="White"/>
+        <TextBlock x:Name="tbDrive" HorizontalAlignment="Left" Margin="10,70,0,0" TextWrapping="Wrap" Text="Initializing..." VerticalAlignment="Top" FontSize="48" Foreground="White"/>
+        <TextBlock x:Name="tbNext" HorizontalAlignment="Left" Margin="10,130,0,0" TextWrapping="Wrap" Text="Initializing..." VerticalAlignment="Top" FontSize="48" Foreground="White"/>
 
     </Grid>
 </Page>

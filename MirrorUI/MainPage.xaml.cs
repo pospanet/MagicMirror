@@ -22,7 +22,6 @@ using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.ProjectOxford.Face;
 using Microsoft.ProjectOxford.Face.Contract;
 using Newtonsoft.Json.Linq;
-using Pospa.Mirror.Common;
 using Pospa.Mirror.Common.MSAL;
 using Pospa.Mirror.Common.Web;
 
@@ -40,6 +39,8 @@ namespace Pospa.NET.MagicMirror.UI
 
         #endregion
 
+        private const int CameraId = 0;
+
         private const float SourceImageHeightLimit = 1024;
         private const BitmapPixelFormat FaceDetectionPixelFormat = BitmapPixelFormat.Gray8;
 
@@ -51,6 +52,7 @@ namespace Pospa.NET.MagicMirror.UI
         private const string UserParameters = "id,displayName,mail,city,country,officeLocation,postalCode,streetAddress";
         private const string StartDatetimeGraphQueryOption = "startDateTime";
         private const string EndDatetimeGraphQueryOption = "endDateTime";
+        private const string MicrosoftGraphEndpoint = "https://graph.microsoft.com";
 
         private static readonly WebRequestHelper WebRequestHelper;
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -94,86 +96,125 @@ namespace Pospa.NET.MagicMirror.UI
             FaceDetector faceDetector = FaceDetector.IsSupported ? await FaceDetector.CreateAsync() : null;
             while (!cancellationToken.IsCancellationRequested)
             {
-                Stream photoStream = await GetPhotoStreamAsync(mediaCapture);
-
-                if (FaceDetector.IsSupported)
+                Stream photoStream;
+                try
+                {
+                    photoStream = await GetPhotoStreamAsync(mediaCapture);
+                }
+                catch (Exception ex)
+                {
+                    HockeyClient.Current.TrackEvent("InitMirrorAsync (GetPhotoStreamAsync) - Exception",
+                        new Dictionary<string, string> {{"Message", ex.Message}, {"Stack", ex.StackTrace}});
+                    continue;
+                }
+                if (FaceDetector.IsSupported && faceDetector!=null)
                 {
                     SoftwareBitmap image = await ConvertImageForFaceDetection(photoStream.AsRandomAccessStream());
 
-                    IList<DetectedFace> localFace = await faceDetector.DetectFacesAsync(image);
+                    IList<DetectedFace> localFace;
+                    try
+                    {
+                        localFace = await faceDetector.DetectFacesAsync(image);
+                    }
+                    catch (Exception ex)
+                    {
+                        HockeyClient.Current.TrackEvent("InitMirrorAsync (DetectFacesAsync Locally) - Exception",
+                            new Dictionary<string, string> {{"Message", ex.Message}, {"Stack", ex.StackTrace}});
+                        continue;
+                    }
 
                     if (!localFace.Any())
                     {
-                        await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                        {
-                            tbName.Text = string.Empty;
-                            tbDrive.Text = string.Empty;
-                            tbNext.Text = string.Empty;
-                        });
+                        await ClearScrean();
                         continue;
                     }
                     HockeyClient.Current.TrackEvent("Face Detected Locally");
                 }
-                Face[] faces = await client.DetectAsync(photoStream, true, true);
-                if (!faces.Any())
-                {
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                    {
-                        tbName.Text = string.Empty;
-                        tbDrive.Text = string.Empty;
-                        tbNext.Text = string.Empty;
-                    });
-                    continue;
-                }
-                HockeyClient.Current.TrackEvent("Face Detected Remotely (Oxford)");
-                IdentifyResult[] identifyResults;
                 try
                 {
-                    identifyResults =
-                        await client.IdentifyAsync(PersonGroupId, faces.Select(face => face.FaceId).ToArray());
+                    await ShowPersonalizedInformation(client, photoStream);
+
                 }
                 catch (Exception ex)
                 {
-                    HockeyClient.Current.TrackEvent("Face API IdentifyAsync - Exception",
-                        new Dictionary<string, string> {{"Message", ex.Message}});
-                    continue;
+                    HockeyClient.Current.TrackEvent("InitMirrorAsync (ShowPersonalizedInformation) - Exception",
+                        new Dictionary<string, string> {{"Message", ex.Message}, {"Stack", ex.StackTrace}});
                 }
+            }
+        }
+
+        private async Task ClearScrean()
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                tbName.Text = string.Empty;
+                tbDrive.Text = string.Empty;
+                tbNext.Text = string.Empty;
+            });
+        }
+
+        private async Task ShowPersonalizedInformation(FaceServiceClient client, Stream photoStream)
+        {
+            Face[] faces;
+            try
+            {
+                faces = await client.DetectAsync(photoStream, true, true);
+            }
+            catch (Exception ex)
+            {
+                faces = new Face[0];
+                HockeyClient.Current.TrackEvent("ShowPersonalizedInformation (DetectAsync) - Exception",
+                    new Dictionary<string, string> {{"Message", ex.Message}, {"Stack", ex.StackTrace}});
+            }
+
+            if (!faces.Any())
+            {
+                await ClearScrean();
+                return;
+            }
+            HockeyClient.Current.TrackEvent("Face Detected Remotely (Oxford)");
+            IdentifyResult[] identifyResults;
+            try
+            {
+                identifyResults =
+                    await client.IdentifyAsync(PersonGroupId, faces.Select(face => face.FaceId).ToArray());
+            }
+            catch (Exception ex)
+            {
+                HockeyClient.Current.TrackEvent("ShowPersonalizedInformation (IdentifyAsync) - Exception",
+                    new Dictionary<string, string> { { "Message", ex.Message }, { "Stack", ex.StackTrace } });
+                return;
+            }
 
 
-                Guid[] personIds = identifyResults.Select(r => r.Candidates.First().PersonId).ToArray();
+            Guid[] personIds = identifyResults.Select(r => r.Candidates.First().PersonId).ToArray();
 
-                Task<Person>[] personTasks =
-                    personIds.Select(async p => await client.GetPersonAsync(PersonGroupId, p)).ToArray();
-                Task.WaitAll(personTasks);
+            Task<Person>[] personTasks =
+                personIds.Select(async p => await client.GetPersonAsync(PersonGroupId, p)).ToArray();
+            Task.WaitAll(personTasks);
 
-                if (personTasks.Any() && personTasks.First().Result != null)
-                {
-                    Person person = personTasks.First().Result;
-                    HockeyClient.Current.TrackEvent("Face Recognized (Oxford)",
-                        new Dictionary<string, string>
-                        {
-                            {"Person ID", person.PersonId.ToString()},
-                            {"Graph User ID", person.Name}
-                        });
-                    try
+            if (personTasks.Any() && personTasks.First().Result != null)
+            {
+                Person person = personTasks.First().Result;
+                HockeyClient.Current.TrackEvent("Face Recognized (Oxford)",
+                    new Dictionary<string, string>
                     {
-                        await ShowPersonalizedInfoPanel(person);
-                    }
-                    catch (Exception ex)
-                    {
-                        HockeyClient.Current.TrackEvent("ShowPersonalizedInfoPanel - Exception",
-                            new Dictionary<string, string> {{"Message", ex.Message}});
-                    }
-                }
-                else
-                {
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                    {
-                        tbName.Text = string.Empty;
-                        tbDrive.Text = string.Empty;
-                        tbNext.Text = string.Empty;
+                        {"Person ID", person.PersonId.ToString()},
+                        {"Graph User ID", person.Name}
                     });
+                try
+                {
+                    await ShowPersonalizedInfoPanel(person);
                 }
+                catch (Exception ex)
+                {
+                    HockeyClient.Current.TrackEvent("ShowPersonalizedInformation (ShowPersonalizedInfoPanel) - Exception",
+                        new Dictionary<string, string> { { "Message", ex.Message }, { "Stack", ex.StackTrace } });
+                }
+            }
+            else
+            {
+                await ClearScrean();
             }
         }
 
@@ -184,7 +225,7 @@ namespace Pospa.NET.MagicMirror.UI
                 await AzureTableStoreTokenCache.GetTokenCacheAsync(new TokenCacheConfig(), person.Name);
             AuthenticationContext authContext = new AuthenticationContext(Authority, tokenCache);
             AuthenticationResult accessTokenAuthenticationResult = await
-                authContext.AcquireTokenSilentAsync("https://graph.microsoft.com", credential,
+                authContext.AcquireTokenSilentAsync(MicrosoftGraphEndpoint, credential,
                     new UserIdentifier(person.Name, UserIdentifierType.UniqueId));
             GraphServiceClient graphClient = new GraphServiceClient(
                 new DelegateAuthenticationProvider(
@@ -212,8 +253,8 @@ namespace Pospa.NET.MagicMirror.UI
             catch (Exception ex)
             {
                 displayDrive = string.Empty;
-                HockeyClient.Current.TrackEvent("GetDrivingInfoAsync - Exception",
-                    new Dictionary<string, string> {{"Message", ex.Message}});
+                HockeyClient.Current.TrackEvent("User Driving Info - Exception",
+                    new Dictionary<string, string> { { "Message", ex.Message }, { "Stack", ex.StackTrace } });
             }
 
             if (!string.IsNullOrEmpty(me.DisplayName))
@@ -251,7 +292,7 @@ namespace Pospa.NET.MagicMirror.UI
             if (string.IsNullOrEmpty(realFrom))
             {
                 Geolocator geolocator = new Geolocator();
-                Geoposition location = await geolocator.GetGeopositionAsync();
+                Geoposition location = await geolocator.GetGeopositionAsync(TimeSpan.MaxValue, TimeSpan.FromSeconds(5));
                 realFrom = string.Concat(location.Coordinate.Point.Position.Latitude, ',',
                     location.Coordinate.Point.Position.Longitude);
             }
@@ -301,7 +342,7 @@ namespace Pospa.NET.MagicMirror.UI
         private static async Task<MediaCapture> InitializeCameraAsync()
         {
             DeviceInformationCollection allVideoDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
-            DeviceInformation cameraDevice = allVideoDevices.FirstOrDefault();
+            DeviceInformation cameraDevice = allVideoDevices.Skip(CameraId).FirstOrDefault();
 
             if (cameraDevice == null)
             {
@@ -319,12 +360,16 @@ namespace Pospa.NET.MagicMirror.UI
             {
                 await mediaCapture.InitializeAsync(mediaInitSettings);
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                HockeyClient.Current.TrackEvent("InitializeCameraAsync (UnauthorizedAccessException) - Exception",
+                new Dictionary<string, string> { { "Message", ex.Message }, { "Stack", ex.StackTrace } });
                 return null;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                HockeyClient.Current.TrackEvent("InitializeCameraAsync - Exception",
+           new Dictionary<string, string> { { "Message", ex.Message }, { "Stack", ex.StackTrace } });
                 return null;
             }
             return mediaCapture;
