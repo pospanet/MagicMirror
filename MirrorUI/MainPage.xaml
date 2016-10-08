@@ -7,10 +7,35 @@
     mc:Ignorable="d">
 
     <Grid Background="Black">
-        <TextBlock x:Name="tbTime" HorizontalAlignment="Right" Margin="10,10,0,0" TextWrapping="Wrap" Text="Initializing..." VerticalAlignment="Bottom" FontSize="68" Foreground="White"/>
+        <TextBlock x:Name="tbTime" HorizontalAlignment="Right" Margin="0,0,40,74" TextWrapping="Wrap" Text="11:00" VerticalAlignment="Bottom" FontSize="96" Foreground="White"/>
+        <TextBlock x:Name="tbDate" HorizontalAlignment="Right" Margin="0,0,40,20" TextWrapping="Wrap" Text="Monday, January 1" VerticalAlignment="Bottom" FontSize="40" Foreground="White"/>
+        <Grid Height="160" Margin="0,14,40,0" Width="400" VerticalAlignment="Top" HorizontalAlignment="Right">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="33*"/>
+                <RowDefinition Height="50*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="43*"/>
+                <ColumnDefinition Width="20*"/>
+                <ColumnDefinition Width="129*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="tbWeather" HorizontalAlignment="Right" Margin="0,0,113,67" TextWrapping="Wrap" VerticalAlignment="Bottom" FontSize="70" Foreground="White" Grid.Column="2" Grid.RowSpan="2">
+                <Run x:Name="tbWeatherValue" Text="15"/>
+                <Run Text="°C"/>
+            </TextBlock>
+            <TextBlock x:Name="tbWeatherText" HorizontalAlignment="Right" Margin="-30,0,0,10" TextWrapping="Wrap" Text="Light rain" VerticalAlignment="Bottom" TextAlignment="Right" FontSize="40" Foreground="White" Height="67" Width="430" Grid.ColumnSpan="3" Grid.Row="1" FontWeight="Bold"/>
+            <Image x:Name="WeatherImage" HorizontalAlignment="Center" Height="100" Margin="161,-2,8,62" VerticalAlignment="Center" Width="100" Source="Assets/Weather/09.png" Stretch="UniformToFill" Grid.Column="2" Grid.RowSpan="2" />
+        </Grid>
+
         <TextBlock x:Name="tbName" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="Initializing..." VerticalAlignment="Top" FontSize="48" Foreground="White"/>
         <TextBlock x:Name="tbDrive" HorizontalAlignment="Left" Margin="10,70,0,0" TextWrapping="Wrap" Text="Initializing..." VerticalAlignment="Top" FontSize="48" Foreground="White"/>
         <TextBlock x:Name="tbNext" HorizontalAlignment="Left" Margin="10,130,0,0" TextWrapping="Wrap" Text="Initializing..." VerticalAlignment="Top" FontSize="48" Foreground="White"/>
+        <Grid HorizontalAlignment="Left" Height="60" Margin="10,0,0,12" VerticalAlignment="Bottom" Width="120">
+            <TextBlock x:Name="tbMail" HorizontalAlignment="Right" TextWrapping="Wrap" Text="99" VerticalAlignment="Bottom" FontSize="40" Foreground="White" Margin="0,0,-2,4"/>
+            <Viewbox MaxHeight="50" MaxWidth="50" Margin="0,0,35,0">
+                <SymbolIcon Symbol="Mail" Foreground="White"/>
+            </Viewbox>
+        </Grid>
 
     </Grid>
 </Page>

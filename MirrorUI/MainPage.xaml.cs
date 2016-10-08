@@ -24,6 +24,7 @@ using Microsoft.ProjectOxford.Face.Contract;
 using Newtonsoft.Json.Linq;
 using Pospa.Mirror.Common.MSAL;
 using Pospa.Mirror.Common.Web;
+using OpenWeatherMap;
 
 namespace Pospa.NET.MagicMirror.UI
 {
@@ -36,6 +37,7 @@ namespace Pospa.NET.MagicMirror.UI
         private const string ClientSecret = "<Client Secret>";
         private const string BingMapsApiKey = "<Bing Maps API key>";
         private const string PersonGroupId = "<Person Group ID>";
+        private const string OpenWeatherKey = "<OpenWeatherMap Key>";
 
         #endregion
 
@@ -75,15 +77,18 @@ namespace Pospa.NET.MagicMirror.UI
 
         private void InitializeClock()
         {
-            DispatcherTimer timer = new DispatcherTimer {Interval = TimeSpan.FromSeconds(15)};
+            DispatcherTimer timer = new DispatcherTimer {Interval = TimeSpan.FromSeconds(5)};
             timer.Tick += Timer_Tick;
             timer.Start();
         }
 
-        private void Timer_Tick(object sender, object e)
+        private async void Timer_Tick(object sender, object e)
         {
-            Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
-                () => { tbTime.Text = DateTime.Now.ToLocalTime().ToString("f"); });
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                () => {
+                    tbTime.Text = DateTime.Now.ToLocalTime().ToString("HH:mm");
+                    tbDate.Text = DateTime.Now.ToLocalTime().ToString("dddd, MMMM d");
+                });
         }
 
         private async Task InitMirrorAsync(MediaCapture mediaCapture, CancellationToken cancellationToken)
@@ -229,18 +234,35 @@ namespace Pospa.NET.MagicMirror.UI
                     new UserIdentifier(person.Name, UserIdentifierType.UniqueId));
             GraphServiceClient graphClient = new GraphServiceClient(
                 new DelegateAuthenticationProvider(
-                    async requestMessage =>
+                    (requestMessage) =>
                     {
                         string accessToken = accessTokenAuthenticationResult.AccessToken;
-
                         requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                        return Task.FromResult(0);
                     }));
             User me = await graphClient.Me.Request().Select(UserParameters).GetAsync();
+
+            // Get user's unread mail count
+            var inbox = await graphClient.Me.MailFolders.Inbox.Request().GetAsync();
+            var unreadMail = inbox.UnreadItemCount;
+            if (unreadMail > 99) unreadMail = 99;
+            tbMail.Text = unreadMail.ToString();
+
+            // Weather
+            var weather = await GetCurrentWeather();
+            int currentTemperature = (int)weather.Temperature.Value;
+            tbWeatherValue.Text = currentTemperature.ToString();
+            var icon = GetWeatherIcon(weather.Weather.Icon);
+            WeatherImage.Source = new Windows.UI.Xaml.Media.Imaging.BitmapImage(new Uri(base.BaseUri, icon));
+            tbWeatherText.Text = weather.Weather.Value;
+
             List<QueryOption> options = new List<QueryOption>
             {
                 new QueryOption(StartDatetimeGraphQueryOption, DateTime.UtcNow.ToString("o")),
                 new QueryOption(EndDatetimeGraphQueryOption, DateTime.UtcNow.AddDays(1).ToString("o"))
             };
+
             IUserCalendarViewCollectionPage cal = await graphClient.Me.CalendarView.Request(options).Top(1).GetAsync();
             DrivingInfo drivingInfo;
             string displayName, displayDrive, displayNext;
@@ -284,6 +306,70 @@ namespace Pospa.NET.MagicMirror.UI
                 tbDrive.Text = displayDrive;
                 tbNext.Text = displayNext;
             });
+        }
+
+        private static async Task<CurrentWeatherResponse> GetCurrentWeather()
+        {
+            var client = new OpenWeatherMapClient(OpenWeatherKey);
+
+            Geolocator geolocator = new Geolocator();
+            Geoposition location = await geolocator.GetGeopositionAsync(TimeSpan.MaxValue, TimeSpan.FromSeconds(5));
+
+            Coordinates coordinates = new Coordinates();
+            coordinates.Latitude = location.Coordinate.Point.Position.Latitude;
+            coordinates.Longitude = location.Coordinate.Point.Position.Longitude;
+
+            var weather = await client.CurrentWeather.GetByCoordinates(coordinates, MetricSystem.Metric);
+            return weather;
+        }
+        private static string GetWeatherIcon(string icon)
+        {
+            string asset;
+            switch (icon)
+            {
+                case "01d":
+                    asset = "01d.png";
+                    break;
+                case "01n":
+                    asset = "01n.png";
+                    break;
+                case "02d":
+                    asset = "02d.png";
+                    break;
+                case "02n":
+                    asset = "02n.png";
+                    break;
+                case "03d":
+                case "03n":
+                case "04d":
+                case "04n":
+                    asset = "03or4.png";
+                    break;
+                case "09n":
+                case "09d":
+                    asset = "09.png";
+                    break;
+                case "10d":
+                case "10n":
+                    asset = "09.png";
+                    break;
+                case "11d":
+                    asset = "11d.png";
+                    break;
+                case "11n":
+                    asset = "11n.png";
+                    break;
+                case "13d":
+                case "13n":
+                    asset = "13.png";
+                    break;
+                case "50n":
+                case "50d":
+                default:
+                    asset = "50.png";
+                    break;
+            }
+            return "Assets/Weather/" + asset;
         }
 
         private static async Task<DrivingInfo> GetDrivingInfoAsync(string to, string from = null)
